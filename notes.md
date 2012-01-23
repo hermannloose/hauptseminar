@@ -1,3 +1,4 @@
+<!-- vim:set ft=markdown: -->
 ## Papers ##
 1. Control-Flow Integrity
   * Abadi, UCSC; Budiu & Erlingsson, Microsoft Research; Ligatti, Princeton — 2005
