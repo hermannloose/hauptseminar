@@ -12,7 +12,9 @@
 * CFI: bewusste Angriffe sollen *verhindert* werden
 * CFCSS: ein (durch Fehler oder Angriffe bedingtes) Ausbrechen aus dem erlaubten Kontrollfluss soll *entdeckt* werden
 
-# CFI #
+***
+
+# Control-Flow Integrity — CFI #
 
 ### Control-Flow Graph (CFG) ###
 * bestimmt erlaubte Ausführungsreihenfolgen
@@ -131,4 +133,22 @@
   Datensegment schlägt dann fehl; hilft aber nicht gegen Angreifer die Glück
   haben, hartnäckig sind oder Wissen bezgl. der IDs haben, also wird dieser
   Ansatz ignoriert
+* die Erfüllung dieser Annahmen wird schwieriger durch selbstmodifizierenden
+  Code, etc., und unerwartetes Nachladen von Code, aber:
+  * ein Großteil von Software ist entweder statisch gelinkt oder hat eine
+    statische Menge von dynamisch gelinkten Bibliotheken, angegeben z.B. durch
+    Configfiles, die Windows-Registry etc.
+  * die Autoren des Papers meinten, sie arbeiten an einer Ausweitung von CFI
+    auf zur Laufzeit generierten Code und andere dynamische Erweiterungen,
+    **nachschauen ob da überhaupt irgendwas passiert ist!**
 
+### Das Problem von Zieläquivalenz ###
+
+### Phasen von Inlined CFI Enforcement ###
+
+## Praktische CFI Implementierung ##
+* Messungen etc.
+
+***
+
+# Control-Flow Checking by Software Signatures — CFCSS #
