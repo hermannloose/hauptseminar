@@ -1,0 +1,115 @@
+\documentclass[serif,slidestop,compress,red]{beamer}
+%\usepackage[utf8]{inputenc}
+
+\usetheme{Antibes}
+
+\usepackage{fontspec}
+%\fontspec{Ubuntu}
+%\fontspec{Helsinki}
+%\fontspec{Vollkorn}
+\usepackage{xltxtra}
+\setmainfont{Ubuntu}
+\setmonofont{Courier 10 Pitch}
+%\setromanfont{Helsinki}
+
+\beamertemplatenavigationsymbolsempty
+
+\title{Compiler-Unterstützung für \\ Control-Flow Integrity Checking}
+\subtitle{Vortrag im Hauptseminar Betriebssysteme}
+\author{Hermann Loose}
+
+\begin{document}
+
+\frame[plain]{\titlepage}
+
+\section{Control-Flow Integrity}
+
+\subsection{Überblick}
+
+\begin{frame}
+  \frametitle{Angreifermodell}
+  \begin{itemize}
+    \item volle Kontrolle über Datensegment
+    \item mögliche Kontrolle über Modul oder Thread im selben Adressraum
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Anwendbarkeit für Angriffsszenarien}
+  \begin{itemize}
+    \item klassische, Stack-basierte Pufferüberläufe
+    \item Heap-basierte jump-to-\texttt{libc} Angriffe
+  \end{itemize}
+  Für ein vereinfachtes Maschinenmodell existiert ein formaler Beweis in [2].
+\end{frame}
+
+\begin{frame}
+  \frametitle{Control-Flow Graph (CFG)}
+  \begin{itemize}
+    \item bestimmt erlaubte Ausführungsreihenfolgen
+    \item muss im Vorhinein feststehen:
+    \begin{itemize}
+      \item Analyse von Quellcode
+      \item Analyse von Binaries
+      \item Profiling der Ausführung
+      \item als Ausdruck einer vorgegebenen Security Policy
+    \end{itemize}
+    \item hier: statische Analyse von Binaries
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Annahmen}
+  \begin{itemize}
+    \item[UNQ] Unique IDs
+    \begin{itemize}
+      \item IDs kommen nicht zufällig im Codesegment vor
+      \item Größe des Suchraumes, z.B. 32 Bit
+    \end{itemize}
+    \item[NWC] Non-Writable Code Memory
+    \begin{itemize}
+      \item auf den meisten Systemen gegeben
+    \end{itemize}
+    \item[NXD] Non-Executable Data Memory
+    \begin{itemize}
+      \item in Hardware auf x86
+      \item in Software möglich\footnote{PaX — http://pax.grsecurity.net}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Instrumentierung}
+  \begin{itemize}
+    \item entsprechend dem CFG
+    \item umfasst Quell- und alle möglichen Zielinstruktionen von Sprüngen mit berechnetem Ziel
+    \item vor jedem Ziel eine \texttt{label}-Instruktion mit der ID der Äquivalenzklasse des Ziels
+  \end{itemize}
+\end{frame}
+
+\subsection{Implementierung}
+
+\subsection{CFI als Basis für andere Mechanismen}
+
+\begin{frame}
+  \frametitle{CFI als Grundlage für IRMs}
+\end{frame}
+
+\begin{frame}
+  \frametitle{SMAC: Generalized SFI}
+\end{frame}
+
+\section{Software Signatures}
+
+\section{}
+
+\begin{frame}
+  \frametitle{Quellen}
+  \begin{enumerate}
+    \item \emph{Control-Flow Integrity} \\ M. Abadi, M. Budiu, Ú. Erlingsson, J. Ligatti — 2005
+    \item \emph{A Theory of Secure Control Flow} \\ M. Abadi, M. Budiu, Ú. Erlingsson, J. Ligatti — 2005
+    \item \emph{Control-Flow Checking by Software Signatures} \\ N. Oh, P. Shirvani, E. McCluskey — 2000
+  \end{enumerate}
+\end{frame}
+
+\end{document}
