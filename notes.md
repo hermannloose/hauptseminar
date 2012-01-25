@@ -12,7 +12,7 @@
 * CFI: bewusste Angriffe sollen *verhindert* werden
 * CFCSS: ein (durch Fehler oder Angriffe bedingtes) Ausbrechen aus dem erlaubten Kontrollfluss soll *entdeckt* werden
 
-***
+---
 
 # Control-Flow Integrity — CFI #
 
@@ -143,12 +143,51 @@
     **nachschauen ob da überhaupt irgendwas passiert ist!**
 
 ### Das Problem von Zieläquivalenz ###
+* der erlaubte Kontrollfluss sollte so präzise wie möglich definierbar und
+  überwachbar sein
+* die Annahme ist, dass Kanten von einer Quelle im CFG zu zwei Zielen bedeuten,
+  dass diese Ziele äquivalent sind; dies muss nicht immer gelten
+  * Beispiel Subtyping, erlaubte Ziele hängen davon ab, auf welchem Typ zur
+    Laufzeit der Aufruf erfolgt
+* Möglichkeiten zur Präzisierung:
+  * Duplizierung, Inlining
+  * verfeinerte Instrumentierung: mehrere IDs an Zielen aus überlappenden
+    Mengen oder Prüfung nur von bestimmten Bits der ID
+* Annahme kann auch gültig gemacht werden durch Hinzufügen von Kanten zum CFG
+  -> Verlust von Präzision
+  * in der Praxis häufig ausreichend
+  * auch extrem grobkörnige Instrumentierung — nur eine ID, oder eine ID für
+    den Start von Funktionen und eine ID für das Ende von Funktionen — können
+    einige Dinge garantieren, z.B. werden Sprünge in die Mitte von Funktionen
+    verhindert
 
 ### Phasen von Inlined CFI Enforcement ###
+1. Konstruktion des CFG
+  * Programmanalyse
+  * Spezifikation von Security Policies
+  * praktische Implementierung kann Standard Kontrollflussanalyse Techniken
+    verwenden, z.B. zur Compile-Zeit
+2. nach Instrumentierung, z.B. zur Installationszeit, kann ein anderer
+   Mechanismus die UNQ Eigenschaf herstellen
+  * bei Veränderung / Installation von Software, erneute Überprüfung der IDs
+3. Verifikationsphase
+  * statische Verifikation von direkten Sprüngen und ähnlichen Instruktionen
+    **?**, der korrekten Einfügung von IDs und ID Checks und der UNQ
+    Eigenschaft **weil doppelt hält besser, mehr oder weniger**
+  * "significant benefit", dass das Ganze dann unabhängig von der Komplexität
+    der vorherigen Schritte ist
 
 ## Praktische CFI Implementierung ##
-* Messungen etc.
+* implementiert für Windows auf x86
+* Instrumentierung mit Vulcan, wird wohl öfter bei Microsoft angewendet
+* konservativer CFG, jede berechnete call-Instruktion kann zu jeder
+  vergebenen Funktionsadresse springen
+* **listings**
+* da IDs und ID-checks inlined sind, spielt die Speicherlatenz keine größere
+  Rolle, der Druck auf Caches wird aber erhöht
+* eax und ecx können auf x86 bei Funktionsaufrufen wohl einfach so benutzt
+  werden **nachschauen**
 
-***
+---
 
 # Control-Flow Checking by Software Signatures — CFCSS #
