@@ -188,6 +188,32 @@
 * eax und ecx können auf x86 bei Funktionsaufrufen wohl einfach so benutzt
   werden **nachschauen**
 
+## aufbauend auf CFI ##
+* kann die Robustheit von CFG-basierten Techniken erhöhen
+
+### CFI als Grundlage für IRMs ###
+* IRMs gewährleisten Security Policies, indem in das zu überwachende Programm
+  entsprechende Checks eingebaut werden, inklusive dem dafür benötigten State
+* Bsp: Files mit bestimmten Namen können nicht geschrieben werden, der Zugriff
+  auf System Calls soll eingeschränkt werden etc.
+* CFI kann sicherstellen, dass diese Checks von einem Angreifer nicht umgangen
+  werden können
+* SMAC (später erklärt) kann sicherstellen, dass für IRMs Speicherbereiche
+  freigehalten werden, in die ein Angreifer nicht schreiben kann
+
+### schnellere Software Fault Isolation ###
+* spezieller IRM
+* an jeder Instruktion, die auf Speicher zugreift, wird durch einen Check
+  sichergestellt, dass diese in einen bestimmten Bereich fällt
+* Garantien bzgl. des Kontrollflusses durch CFI können SFI sicherer optimieren
+  * Beispiel for-Statement, Zugriff auf Array muss nicht bei jeder Iteration
+    geprüft werden **listing?**
+  * **Zahlen zur Overhead Reduktion?**
+
+### SMAC: generalisierte SFI ###
+
+
 ---
+>>>>>>> Stashed changes
 
 # Control-Flow Checking by Software Signatures — CFCSS #
