@@ -1,5 +1,7 @@
 \documentclass[serif,slidestop,compress,red]{beamer}
 %\usepackage[utf8]{inputenc}
+\usepackage{caption}
+\usepackage{listings}
 
 \usetheme{Antibes}
 
@@ -10,15 +12,30 @@
 \usepackage{xltxtra}
 \setmainfont{Ubuntu}
 \setmonofont{Courier 10 Pitch}
-%\setromanfont{Helsinki}
+\setromanfont{Ubuntu}
+\setsansfont{Ubuntu}
 
 \beamertemplatenavigationsymbolsempty
 
-\title{Compiler-Unterstützung für \\ Control-Flow Integrity Checking}
+\title{Control-Flow Integrity Checking}
 \subtitle{Vortrag im Hauptseminar Betriebssysteme}
 \author{Hermann Loose}
 
+\definecolor{light-gray}{gray}{0.7}
+
+\DeclareCaptionFont{white}{\color{white}}
+\DeclareCaptionFormat{listing}{\colorbox{gray}{\parbox{\textwidth}{\hspace{0.9em}#1#2#3}}}
+\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white,font={sf}}
+
 \begin{document}
+
+\definecolor{keywords}{RGB}{255,0,90}
+\definecolor{comments}{RGB}{100,100,100}
+\lstset{
+  language=[x86masm]Assembler,
+  basicstyle=\ttfamily
+  %frame=lines
+}
 
 \frame[plain]{\titlepage}
 
@@ -88,6 +105,72 @@
 \end{frame}
 
 \subsection{Implementierung}
+
+\begin{frame}[fragile]
+  \frametitle{Ausgangspunkt}
+  \begin{lstlisting}[title=Quelle]
+
+
+
+  jmp ecx              ; computed jump
+  \end{lstlisting}
+  \begin{lstlisting}[title=Ziel]
+
+  mov eax, [esp+4]     ; dst
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Instrumentierung — Variante 1}
+  \begin{lstlisting}[title=Quelle]
+  cmp [ecx], 12345678h ; comp ID & dst
+  jne error_label      ; if != fail
+  lea ecx, [ecx+4]     ; skip ID at dst
+  jmp ecx              ; jump to dst
+  \end{lstlisting}
+  \begin{lstlisting}[title=Ziel]
+  ; data 12345678h     ; ID
+  mov eax, [esp+4]     ; dst
+  \end{lstlisting}
+\end{frame}
+
+%\begin{frame}[fragile]
+%  \frametitle{Quelle — erster Versuch}
+%  \begin{lstlisting}
+%  cmp [ecx], 12345678h ; 81 39 78 56 34 12
+%  jne error_label      ; 75 13
+%  lea ecx, [ecx+4]     ; 8D 49 04
+%  jmp ecx              ; FF E1
+%  \end{lstlisting}
+%\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Instrumentierung — Variante 1}
+  \begin{lstlisting}[title=Quelle,escapechar=!]
+  cmp [ecx], !\colorbox{light-gray}{12345678h}! ; 81 39 !\emph{\colorbox{light-gray}{78 56 34 12}}!
+  jne error_label      ; 75 13
+  lea ecx, [ecx+4]     ; 8D 49 04
+  jmp ecx              ; FF E1
+  \end{lstlisting}
+  \textbf{Problem:} die ID ist in die \texttt{cmp} Instruktion eingebettet, \\ macht
+  damit \texttt{jne error\_label} zu einem gültigen Ziel
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Instrumentierung — Variante 2}
+  \begin{lstlisting}[title=Quelle]
+  mov eax, 12345677h ; load ID-1
+  inc eac            ; increment ID
+  cmp [ecx+4], eax   ; compare w/ dst
+  jne error_label    ; if != fail
+  jmp ecx            ; jump to label
+  \end{lstlisting}
+  \begin{lstlisting}[title=Ziel]
+  prefetchnta        ; label
+     [12345678h]     ;    ID
+  mov eax, [esp+4]   ; dst
+  \end{lstlisting}
+\end{frame}
 
 \subsection{CFI als Basis für andere Mechanismen}
 
