@@ -43,11 +43,35 @@
 
 \subsection{Überblick}
 
+\begin{frame}[fragile]
+  \frametitle{Das Problem}
+  \begin{lstlisting}[escapechar=!]
+  void pwnable(void) {
+    char buf[30];
+    gets(buf);
+    printf("%s\n", buf);
+  }
+  \end{lstlisting}
+  \begin{flushright}
+  \emph{„Bounds … Y U NO CHECK THEM??!?!“}
+  \end{flushright}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Motivation}
+  \textbf{Problem:} dynamischer Kontrollfluss
+  \begin{itemize}
+    \item
+  \end{itemize}
+\end{frame}
+
 \begin{frame}
   \frametitle{Angreifermodell}
   \begin{itemize}
     \item volle Kontrolle über Datensegment
-    \item mögliche Kontrolle über Modul oder Thread im selben Adressraum
+    \item möglicherweise bereits Kontrolle über Modul oder Thread im selben Adressraum
+    \item … und überhaupt viel stärker, klüger, hübscher und toller als alle
+    jemals von anderen Forschern betrachteten und unterschätzten Angreifer!
   \end{itemize}
 \end{frame}
 
@@ -63,7 +87,10 @@
 \begin{frame}
   \frametitle{Control-Flow Graph (CFG)}
   \begin{itemize}
-    \item bestimmt erlaubte Ausführungsreihenfolgen
+    \item Knoten sind Codeabschnitte (\emph{basic blocks}) ohne Sprünge
+    % TODO(hermannloose): Lassen wir hier eigentlich direkte Sprünge schon weg?
+    \item Kanten zeigen möglichen Kontrollfluss zwischen Knoten an, hauptsächlich z.B. Funktionsaufrufe und Returns
+    \item Weg im CFG = erlaubte Ausführungsreihenfolge
     \item muss im Vorhinein feststehen:
     \begin{itemize}
       \item Analyse von Quellcode
@@ -71,7 +98,7 @@
       \item Profiling der Ausführung
       \item als Ausdruck einer vorgegebenen Security Policy
     \end{itemize}
-    \item hier: statische Analyse von Binaries
+    \item \textbf{hier:} statische Analyse von Binaries
   \end{itemize}
 \end{frame}
 
@@ -91,16 +118,27 @@
     \begin{itemize}
       \item in Hardware auf x86
       \item in Software möglich\footnote{PaX — http://pax.grsecurity.net}
+      \item und kann außerdem von CFI \emph{selbst} erledigt werden …
+      %\item (Look, mommy, no hands!)
     \end{itemize}
+    \begin{flushright}
+      \emph{„Look, mommy, no hands!“}
+    \end{flushright}
   \end{itemize}
 \end{frame}
 
 \begin{frame}
   \frametitle{Instrumentierung}
   \begin{itemize}
-    \item entsprechend dem CFG
-    \item umfasst Quell- und alle möglichen Zielinstruktionen von Sprüngen mit berechnetem Ziel
-    \item vor jedem Ziel eine \texttt{label}-Instruktion mit der ID der Äquivalenzklasse des Ziels
+    \item entsprechend dem CFG,
+    \item für alle Sprünge mit berechnetem Ziel,
+    \item und alle erlaubten Ziele.
+  \end{itemize}
+  \begin{itemize}
+    \item vor jedem \textbf{Ziel} die ID seiner Äquivalenzklasse,\\ evtl. in einer
+    \texttt{label}-Instruktion
+    \item vor jeder \textbf{Quelle} ein Vergleich der Äquivalenzklasse des
+    Ziels zur Laufzeit mit der erlaubten
   \end{itemize}
 \end{frame}
 
@@ -112,7 +150,7 @@
 
 
 
-  jmp ecx              ; computed jump
+  jmp ecx              ; jump to dst
   \end{lstlisting}
   \begin{lstlisting}[title=Ziel]
 
