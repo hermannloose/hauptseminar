@@ -1,5 +1,6 @@
 \documentclass[mathserif,slidestop,compress,red]{beamer}
 %\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
 \usepackage{caption}
 \usepackage{listings}
 
@@ -120,7 +121,7 @@
     % TODO(hermannloose): Lassen wir hier eigentlich direkte Sprünge schon weg?
     \item Kanten zeigen möglichen Kontrollfluss zwischen Knoten an, hauptsächlich z.B. Funktionsaufrufe und Returns
     \item Weg im CFG = erlaubte Ausführungsreihenfolge
-    \item muss im Vorhinein feststehen:
+    \item muss im Vorhinein feststehen
     \begin{itemize}
       \item Analyse von Quellcode
       \item Analyse von Binaries
@@ -134,24 +135,19 @@
 \begin{frame}
   \frametitle{Annahmen}
   \begin{itemize}
-    %\item[UNQ] Unique IDs
-    %\begin{itemize}
-    %  \item IDs kommen nicht zufällig im Codesegment vor
-    %  \item Größe des Suchraumes, z.B. 32 Bit
-    %\end{itemize}
     \item[NWC] Non-Writable Code Memory
     \begin{itemize}
       \item auf den meisten Systemen gegeben
       \pause
-      \item und kann später von CFI \emph{selbst} erledigt werden
+      \item und kann später von CFI selbst erledigt werden
     \end{itemize}
     \pause
     \item[NXD] Non-Executable Data Memory
     \begin{itemize}
       \item in Hardware auf x86
-      \item in Software möglich\footnote{PaX — http://pax.grsecurity.net}
+      \item in Software möglich\footnote<3->{PaX — http://pax.grsecurity.net}
       \pause
-      \item und kann später von CFI \emph{selbst} erledigt werden
+      \item und kann später von CFI selbst erledigt werden
     \end{itemize}
   \end{itemize}
 \end{frame}
@@ -160,13 +156,13 @@
   \frametitle{Instrumentierung}
   \begin{itemize}
     \item entsprechend dem CFG,
-    \item für alle Sprünge mit berechnetem Ziel,
+    \item für alle Kontrollflusstransfers mit berechnetem Ziel,
     \item und alle erlaubten Ziele.
-  \end{itemize}
-  \begin{itemize}
-    \item vor jedem \textbf{Ziel} die ID seiner Äquivalenzklasse,\\ evtl. in einer
-    \texttt{label}-Instruktion
-    \item vor jeder \textbf{Quelle} ein Vergleich der Äquivalenzklasse des
+    \pause
+    \vspace{1em}
+    \item vor jedem Ziel die ID seiner Äquivalenzklasse,\\ als Daten
+    oder Operand einer „\texttt{label}“-Instruktion
+    \item vor jeder Quelle ein ID-Vergleich der Äquivalenzklasse des
     Ziels zur Laufzeit mit der erlaubten
   \end{itemize}
 \end{frame}
@@ -264,6 +260,32 @@
      [12345678h]     ;    ID
   mov eax, [esp+4]   ; dst
   \end{lstlisting}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Beobachtungen}
+  \begin{itemize}
+    \item gröberer CFG durch Annahme von Ziel-Äquivalenzklassen
+    \begin{itemize}
+      \item ignoriert z.B. virtuelle Methoden
+    \end{itemize}
+    \item Returns nicht auf jüngsten Aufrufort beschränkt
+    \pause
+    \vspace{1em}
+    \item vermeidbar durch Codeduplizierung
+    \begin{itemize}
+      \item Äquivalenzannahme herstellbar
+      \item Extremfall: komplettes Inlining
+    \end{itemize}
+    \item Verfeinerung der Instrumentierung denkbar
+    \pause
+    \vspace{1em}
+    \item allerdings gibt bereits ein grober CFG einige Garantien
+    \begin{itemize}
+      \item keine Sprünge in die Mitte von Funktionen
+      \item nur Returns an Aufruforte, etc.
+    \end{itemize}
+  \end{itemize}
 \end{frame}
 
 \subsection{CFI als Basis für andere Mechanismen}
@@ -536,9 +558,10 @@
   \frametitle{Aliasing-Problem}
   \begin{itemize}
     \item mehrere Knoten teilen sich mehrere Branch Fan-In Knoten als Ziele (aber nicht alle)
-
-    \item
   \end{itemize}
+  \begin{center}
+  \includegraphics[width=0.7\textwidth]{aliasing}
+  \end{center}
 \end{frame}
 
 \subsection{Messungen}
