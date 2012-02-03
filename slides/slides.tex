@@ -564,6 +564,21 @@
   \end{center}
 \end{frame}
 
+\begin{frame}
+  \frametitle{Aliasing-Problem}
+  \begin{itemize}
+    \item mehrere Knoten teilen sich mehrere Branch Fan-In Knoten als Ziele (aber nicht alle)
+    \item tritt auf wenn $d_i = s_s \oplus s_i, d_j = s_s \oplus s_j$ gilt, aber die Mengen der
+    Vorgänger von $v_i$ und $v_j$ nicht gleich sind
+    \begin{itemize}
+      \item ein unerlaubter Transfer von $v_1$ zu $v_6$ würde im Beispiel nicht erkannt
+    \end{itemize}
+    \pause
+    \item nur bei Transfer zur ersten Instruktion im Knoten
+    \item kann über Hamming-Distanz zwischen Startadressen von Knoten zum Teil gelöst werden
+  \end{itemize}
+\end{frame}
+
 \subsection{Messungen}
 
 \begin{frame}
