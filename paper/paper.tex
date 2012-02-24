@@ -1,7 +1,6 @@
-\documentclass[10pt,twocolumn]{article}
+\documentclass[11pt]{article}
 \usepackage{fontspec}
 \usepackage{ngerman}
-\usepackage[top=2.5cm,left=2cm,right=2cm,bottom=2.5cm]{geometry}
 
 \setromanfont{Charis SIL}
 
@@ -14,16 +13,36 @@
 
 \section{Einführung}
 
-% ungültiger Kontrollfluss stellt sowohl ein Problem für die Sicherheit von
-% Systemen als auch für die Korrektheit der von ihnen ausgeführten Berechnungen
-% dar
+% Doofer Satzanfang.
+Ungültiger Kontrollfluss in Programmen stellt ein Problem sowohl für die
+Sicherheit der Rechnersysteme auf denen diese Programme laufen als auch für die
+Verlässlichkeit der von ihnen ausgeführten Berechnungen dar.
+
+% Blah blah?
+Es werden in der Folge zwei Verfahren betrachtet, die sich jeweils einem dieser
+beiden Aspekte widmen und einander dabei in der Vorgehensweise zum Teil sehr
+ähnlich sind.
 
 \section{Control-Flow Integrity}
 
-% FIXME(hermannloose): Dopplung des Titels.
-\subsection{Einführung}
+Das in \cite{abadi-2005-control-msr} vorgestellte Verfahren \emph{Control-Flow
+Integrity} (CFI) zielt darauf ab, Angriffe zu verhindern, die auf dem Verlassen des
+erlaubten Kontrollflusses in einem Programm aufbauen.
 
-% Ansatz zielt auf Sicherheit ab
+Die Autoren argumentieren, dass viele der bisher gegen solche Angriffe
+eingesetzten Mechanismen in ihrer Wirksamkeit beschränkt seien, da ihnen ein
+realistisches Angreifermodell fehlen würde und sie sich selten auf formale
+Schlüsse und häufig auf verborgene Annahmen stützten.
+
+Die Antwort auf diese Probleme seien einfach verständliche Verfahren mit
+dennoch umfassenden Garantien gegenüber starken Angreifern. Zudem sollten
+praxistaugliche Techniken möglichst auf existierenden Code bzw. sogar auf
+existierende Binaries anwendbar sein.
+
+CFI als eine mögliche Lösung wurde von den Autoren für Windows auf der x86
+Architektur entwickelt und getestet.
+
+\subsection{Grundlagen}
 
 % TODO(hermannloose): An welcher Stelle Theorie einbauen?
 
@@ -33,16 +52,50 @@
 % FIXME(hermannloose): Artet evtl. in Kopie aus.
 \subsection{Annahmen}
 
-% FIXME(hermannloose): Titel finden.
-\subsection{CFI als Grundlage für\\andere Verfahren}
-
 \subsection{Messungen}
 
-% Kritik: wenig sicherheitsrelevante Ergebnisse
+Die in \cite{abadi-2009-control-tissec} diskutierten Messungen beziehen auf
+bekannte Benchmarks aus dem SPEC-Paket. Sie wurden auf einem Pentium 4 x86 mit
+1.8GHz und 512MB RAM unter Verwendung von Windows XP SP2 im \emph{Safe Mode},
+bei dem ein Großteil der Dienste und Kernelmodule deaktiviert ist,
+durchgeführt. Die untersuchten Programme wurden in Microsoft Visual C++ 7.1 mit
+allen verfügbaren Optimierungen compiliert.
 
+Die ermittelten Werte stellen jeweils den Durchschnitt von drei Durchläufen
+dar, die Standardabweichung von weniger als einem Prozent wurde von den Autoren
+als vernachlässigbar angesehen.
+
+% Kritik: wenig sicherheitsrelevante Ergebnisse, bereits 2004 im ersten Entwurf
+% nur Sektion für Performancemessungen angelegt!
+
+% FIXME(hermannloose): Besseren Titel finden.
+\subsection{CFI als Grundlage für\\andere Verfahren}
+
+% TODO(hermannloose): Zitate für IRMs und SMAC?
+Aufgrund seiner Garantien für den Kontrollfluss von Programmen kann CFI zudem
+als Grundlage für den Einsatz bzw. die Optimierung und Vereinfachung einer
+Reihe anderer, ebenfalls softwarebasierter Mechanismen dienen. Die in
+\cite{abadi-2009-control-tissec} beleuchteten sind \emph{Inlined Reference
+Monitors} (IRMs) und \emph{Software Memory Access-Control} (SMAC).
+
+% wie erkläre ich die zwei Verfahren, ohne hier einfach das Paper übersetzt zu
+% reproduzieren? (oder ist das legitim?)
+
+% FIXME(hermannloose): Anderen Titel finden.
+% Ausblick nach sieben Jahren ist etwas müßig.
 \subsection{Ausblick}
 
 % Kritik: an dem Thema hat sich seit 2005 nichts getan
+\cite{abadi-2009-control-tissec} erschien zuerst im Februar 2005 als Technical
+Report von Microsoft Research \cite{abadi-2005-control-msr}. Spätere
+Veröffentlichungen 2005 und 2007 sind inhaltlich identisch. Zum Problem des
+Umgangs mit selbstmodifizierendem Code und Codegenerierung zur Laufzeit erfolgt
+in \cite{abadi-2005-control-msr} der Verweis „we are working on […] handling
+runtime code generation and other dynamic additions of code“, seit 2007 und in
+\cite{abadi-2009-control-tissec} lautet diese Stelle nunmehr „we have
+considered working on […] handling runtime code generation and other dynamic
+additions of code“, was nahelegt, dass hier kein weiterer Fortschritt erfolgt
+ist. % TODO(hermannloose): Zitate checken.
 
 % beleuchten: ist Overhead ein Problem?
 
@@ -55,8 +108,13 @@
 
 \subsection{Konzept}
 
+\subsection{Simulationsergebnisse}
+
+% TODO(hermannloose): Gab es hier weitere Paper?
+
+\pagebreak
 %\section{Quellen}
-\bibliographystyle{plain}
+\bibliographystyle{unsrt}
 \bibliography{paper}
 
 \end{document}
