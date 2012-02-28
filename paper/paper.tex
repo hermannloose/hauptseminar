@@ -77,22 +77,49 @@ mit linearem Kontrollfluss ohne dynamische Transfers. Die gerichteten Kanten
 des Graphen geben erlaubten Kontrollfluss zwischen diesen Knoten an.
 
 Die erste Instruktion eines Knotens stellt ein erlaubtes Ziel für Transfers aus
-den Knoten der Eingangskanten dar. Am Ende des Knotens steht jeweils eine
+den Startknoten der Eingangskanten dar. Am Ende des Knotens steht jeweils eine
 Instruktion, welche ebenfalls den Kontrollfluss zur Laufzeit dynamisch bestimmt
-und deren mögliche Ziele durch die ausgehenden Kanten bestimmt sind.
+und deren mögliche Ziele die Endknoten der ausgehenden Kanten sind.
+
+% TODO(hermannloose): Holpriger Absatz, überarbeiten!
+Mit Vorgriff auf die spätere Implementierung erfolgt zudem die Annahme, dass
+Knoten, deren Eingangskanten gemeinsame Startknoten haben, äquivalente Ziele
+darstellen, d.h. auf der Knotenmenge des Graphen ergeben sich
+Äquivalenzklassen. Die Implikationen dieser Forderung werden später beleuchtet.
+% FIXME(hermannloose): "Implikationen bezüglich was?" -> ausführen?
 
 Die Autoren führen verschiedene Möglichkeiten für die Definition eines solchen
 CFGs an, wobei sie sich für ihre Experimente auf CFGs konzentrieren, die durch
-statische Analyse von Binaries gewonnen wurden.
-
-
+statische Analyse von Binärdateien gewonnen wurden, ebenfalls mittels Vulcan.
 
 % TODO(hermannloose): An welcher Stelle Theorie einbauen?
 
-% FIXME(hermannloose): Artet evtl. in Kopie aus.
 \subsection{Instrumentierung}
 
-% FIXME(hermannloose): Artet evtl. in Kopie aus.
+Liegt ein solcher CFG vor, muss demnach zur Laufzeit vor Kontrollflusstransfers
+mit dynamisch bestimmtem Ziel sichergestellt werden, dass vom aktuellen Knoten
+zum jeweiligen Zielknoten eine Kante im CFG existiert.
+
+Dazu wird jeder Äquivalenzklasse von Zielknoten im CFG eine ID zugewiesen und
+direkt vor jedem Zielknoten im Codesegment eingefügt. Vor dem Transfer kann
+daraufhin überprüft werden, ob die ID am aktuellen Ziel—dessen Adresse sich
+z.B. in einem Register befindet—mit der ID der für diese Instruktion zulässigen
+Ziele übereinstimmt.
+
+Diese einleitende Betrachtung erfolgt unter Verwendung von erdachten
+Instruktionen für Funktionsaufrufe und –rückkehr, welche jeweils die zulässige
+Ziel-ID als Operand erhalten, sowie einer effektfreien Label-Instruktion, deren
+Operand die ID des Knotens ist, welcher mit diesem Label versehen wird.
+
+An dieser Stelle identifizieren die Autoren als Problem, dass mit dieser
+Vorgehensweise nicht sichergestellt werden kann, dass Funktionen ausschließlich
+zu ihrem jüngsten Aufrufort zurückkehren können. Es erfolgt der Verweis auf die
+spätere Beschreibung eines auf CFI aufbauenden Verfahrens, welches diese
+Beschränkung ermöglicht.
+
+Die Autoren evaluieren in der Folge zwei konkrete Möglichkeiten der
+Instrumentierung von Funktionsaufrufen.
+
 \subsection{Annahmen}
 
 Die Autoren setzen für den Einsatz von CFI drei Annahmen voraus:
