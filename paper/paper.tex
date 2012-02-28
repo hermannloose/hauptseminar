@@ -41,22 +41,35 @@ Schlüsse und häufig auf verborgene Annahmen stützten.
 Die Antwort auf diese Probleme seien einfach verständliche Verfahren mit
 dennoch umfassenden Garantien gegenüber starken Angreifern. Zudem sollten
 praxistaugliche Techniken möglichst auf existierenden Code bzw. sogar auf
-existierende Binaries anwendbar sein.
+existierende Binärdateien anwendbar sein.
 
-CFI als eine mögliche Lösung wurde von den Autoren für Windows auf der x86
-Architektur entwickelt und getestet. Ergänzend dazu wurde CFI in
+CFI als softwarebasierte Lösung wurde von den Autoren für Windows auf der x86
+Architektur entwickelt und getestet; die Möglichkeit einer
+Hardwareimplementierung von CFI wird hierbei kurz angesprochen, aber für die
+nähere Zukunft als unwahrscheinlich bewertet. Ergänzend dazu wurde CFI in
 \cite{abadi-2005-theory-fmse} für ein vereinfachtes Maschinenmodel
 formalisiert.
 
 \subsection{Grundlagen}
 
-Das Angreifermodell für CFI beschreibt einen Angreifer, welcher „volle Kontrolle
-über das Datensegment des ausführenden Programms besitzt“. Als tatsächliches
-Problem für die garantierte Einhaltung des erlaubten Kontrollflusses
-identifizieren die Autoren daraufhin all die Kontrollflusstransfers, deren Ziel
-im Programm erst zur Laufzeit bestimmt wird, schließlich hat ein solcher
-Angreifer auf Transfers mit konstantem Ziel, wie z.B. direkte Funktionsaufrufe,
-keinen Einfluss.
+Das Angreifermodell für CFI beschreibt einen Angreifer, welcher „volle
+Kontrolle über das Datensegment des ausführenden Programms besitzt“. Zusätzlich
+wird die Möglichkeit zugelassen, dass der Angreifer bereits die Kontrolle über
+ein anderes Modul oder einen anderen Thread im Adressraum besitzt. Als
+tatsächliches Problem für die garantierte Einhaltung des erlaubten
+Kontrollflusses identifizieren die Autoren daraufhin all die
+Kontrollflusstransfers, deren Ziel im Programm erst zur Laufzeit bestimmt wird,
+schließlich hat ein solcher Angreifer auf Transfers mit konstantem Ziel, wie
+z.B. direkte Funktionsaufrufe, keinen Einfluss.
+
+Um die Anwendung von CFI für existierende Software zu ermöglichen, wählten die
+Autoren den Weg der Binärinstrumentierung von bereits übersetzten Programmen.
+Durchgeführt wurde diese Instrumentierung mittels \emph{Vulcan}
+\cite{edwards-vulcan}, von den Autoren als „reifes, state-of-the-art
+Instrumentierungssystem für x86 Binärdateien“ beschrieben.
+
+% TODO(hermannloose): Zur besseren Übersicht gerechtfertigt?
+\subsubsection{Kontrollflussgraph}
 
 Ausgangspunkt für das Verfahren ist ein \emph{Kontrollflussgraph} (CFG). Die
 Knoten dieses Graphen bezeichnen sogenannte \emph{basic blocks}—Codeabschnitte
