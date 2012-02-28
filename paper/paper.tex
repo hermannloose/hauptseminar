@@ -28,9 +28,10 @@ beiden Aspekte widmen und einander dabei in der Vorgehensweise zum Teil sehr
 
 Das in \cite{abadi-2005-control-msr} vorgestellte Verfahren \emph{Control-Flow
 Integrity} (CFI) zielt darauf ab, Angriffe zu verhindern, die auf dem Verlassen
-des erlaubten Kontrollflusses in einem Programm aufbauen. Beispielhaft genannt
-werden stackbasierte Pufferüberläufe und darauf fußende Techniken, heapbasierte
-\emph{jump-to-}\texttt{libc}-Angriffe sowie \emph{pointer subterfuge}-Angriffe.
+des erlaubten Kontrollflusses in einem Programm aufbauen. Beispielhaft werden
+stackbasierte Pufferüberläufe und darauf fußende Techniken, heapbasierte
+\emph{jump-to-}\texttt{libc}-Angriffe sowie \emph{pointer subterfuge}-Angriffe
+genannt.
 
 Die Autoren argumentieren, dass viele der bisher gegen solche Angriffe
 eingesetzten Mechanismen in ihrer Wirksamkeit beschränkt seien, da ihnen ein
@@ -49,8 +50,8 @@ formalisiert.
 
 \subsection{Grundlagen}
 
-Das Angreifermodell für CFI beschreibt einen Angreifer, welcher volle Kontrolle
-über das Datensegment des zu schützenden Programms besitzt. Als tatsächliches
+Das Angreifermodell für CFI beschreibt einen Angreifer, welcher „volle Kontrolle
+über das Datensegment des ausführenden Programms besitzt“. Als tatsächliches
 Problem für die garantierte Einhaltung des erlaubten Kontrollflusses
 identifizieren die Autoren daraufhin all die Kontrollflusstransfers, deren Ziel
 im Programm erst zur Laufzeit bestimmt wird, schließlich hat ein solcher
@@ -60,11 +61,18 @@ keinen Einfluss.
 Ausgangspunkt für das Verfahren ist ein \emph{Kontrollflussgraph} (CFG). Die
 Knoten dieses Graphen bezeichnen sogenannte \emph{basic blocks}—Codeabschnitte
 mit linearem Kontrollfluss ohne dynamische Transfers. Die gerichteten Kanten
-des Graphen geben erlaubten Kontrollfluss zwischen diesen Knoten an. Die erste
-Instruktion eines Knotens stellt ein erlaubtes Ziel für Transfers aus den
-Knoten der Eingangskanten dar. Am Ende des Knotens steht jeweils eine
+des Graphen geben erlaubten Kontrollfluss zwischen diesen Knoten an.
+
+Die erste Instruktion eines Knotens stellt ein erlaubtes Ziel für Transfers aus
+den Knoten der Eingangskanten dar. Am Ende des Knotens steht jeweils eine
 Instruktion, welche ebenfalls den Kontrollfluss zur Laufzeit dynamisch bestimmt
 und deren mögliche Ziele durch die ausgehenden Kanten bestimmt sind.
+
+Die Autoren führen verschiedene Möglichkeiten für die Definition eines solchen
+CFGs an, wobei sie sich für ihre Experimente auf CFGs konzentrieren, die durch
+statische Analyse von Binaries gewonnen wurden.
+
+
 
 % TODO(hermannloose): An welcher Stelle Theorie einbauen?
 
@@ -73,6 +81,35 @@ und deren mögliche Ziele durch die ausgehenden Kanten bestimmt sind.
 
 % FIXME(hermannloose): Artet evtl. in Kopie aus.
 \subsection{Annahmen}
+
+Die Autoren setzen für den Einsatz von CFI drei Annahmen voraus:
+
+\begin{description}
+
+  \item [UNQ] \emph{Unique IDs:} „Nach der Instrumentierung dürfen die als IDs
+  gewählten Bitmuster nirgendwo im Codesegment vorkommen außer in IDs und
+  ID-Checks.“
+
+  Die Autoren schlagen einen mindestens 32 Bit großen Schlüsselraum für die
+  Wahl von IDs vor, um diese Annahme zu gewährleisten.
+
+  \item [NWC] \emph{Non-Writable Code:} „Es darf dem Programm nicht möglich
+  sein, das Codesegment zur Laufzeit zu verändern. Ansonsten wäre es einem
+  Angreifer möglich, CFI z.B. durch das Überschreiben eines ID-Checks zu
+  umgehen.“
+
+  Während dies auf den meisten aktuellen Systemen gilt, weisen die Autoren auf
+  problematische Fälle wie das Laden dynamisch gelinkter Bibliotheken und
+  Codegenerierung zur Laufzeit hin.
+
+  \item [NXD] \emph{Non-Executable Data:} „Es darf dem Programm nicht möglich
+  sein, Daten als Code auszuführen. Ansonsten könnte ein Angreifer die
+  Ausführung von Daten, welche mit der korrekten ID versehen sind, anstoßen.“
+
+\end{description}
+
+Es folgen einige Betrachtungen zum Verhalten des Systems, falls eine oder
+mehrere Annahmen nicht gelten.
 
 \subsection{Messungen}
 
