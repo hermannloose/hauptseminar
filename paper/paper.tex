@@ -120,6 +120,31 @@ Beschränkung ermöglicht.
 Die Autoren evaluieren in der Folge zwei konkrete Möglichkeiten der
 Instrumentierung von Funktionsaufrufen.
 
+% TODO(hermannloose): Hier die Listings aus dem Paper anführen?
+
+Im ersten Fall stehen die Bytes der ID eines möglichen Ziels als Daten vor
+diesem im Codesegment, Zieladressen von Kontrollflusstransfers zeigen jeweils
+auf den Beginn dieser IDs. Der ID-Check an der Quelle vergleicht den Wert an
+der Zieladresse mit einer als Immediate-Operand vorliegenden zulässigen ID.
+% FIXME(hermannloose): Sehr holpriger Satz.
+% FIXME(hermannloose): Eigentlich hier noch nicht konkret, da theoretische Betrachungen.
+Schlägt dieser Vergleich fehl, erfolgt der Programmabbruch, mit einem von den
+Autoren nicht weiter spezifizierten „Windows-Mechanismus zum Melden von
+Sicherheitsverstößen“.
+
+Als Problem wird bei dieser Methode angeführt, dass die Bytes der ID im
+Codesegment sowohl am eigentlichen Ziel als auch in den Instruktionen des
+ID-Checks vorkommen. Damit stellt die unmittelbar auf die Vergleichsoperation
+folgende Instruktion—im Beispiel \texttt{jne error\_label}, zur
+Fehlerbehandlung, was sich durch Präparieren der Prozessorflags umgehen
+lässt—ein unerwartetes, gültiges Ziel dar.
+
+Die zweite Herangehensweise löst diese Situation durch das Laden von ID–1 in
+ein Register, nachfolgendes Inkrementieren und den Vergleich der ID am Ziel mit
+dem enstandenden Wert.
+% TODO(hermannloose): Der Kommentar zur Nicht-Modifikation der Zieladresse
+% macht nur richtig Sinn mit Listings zur Illustration.
+
 \subsection{Annahmen}
 
 Die Autoren setzen für den Einsatz von CFI drei Annahmen voraus:
