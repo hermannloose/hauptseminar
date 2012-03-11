@@ -3,7 +3,10 @@
 \usepackage{ngerman}
 \usepackage[top=3cm,left=3.5cm,right=3.5cm,bottom=3cm]{geometry}
 
+\usepackage{listings}
+
 \setromanfont{Charis SIL}
+\setmonofont{Courier 10 Pitch}
 
 \title{Control-Flow Integrity Checking}
 \author{Hermann Loose}
@@ -120,7 +123,24 @@ Beschränkung ermöglicht.
 Die Autoren evaluieren in der Folge zwei konkrete Möglichkeiten der
 Instrumentierung von Funktionsaufrufen.
 
-% TODO(hermannloose): Hier die Listings aus dem Paper anführen?
+\lstset{
+  language=[x86masm]Assembler,
+  basicstyle=\ttfamily\small,
+  frame=lines
+}
+
+\begin{lstlisting}[title=Quelle]
+  81 39 78 56 34 12  cmp  [ecx], 12345678h  ; comp ID & dst
+  75 13              jne  error_label       ; if != fail
+  8D 49 04           lea  ecx, [ecx+4]      ; skip ID at dst
+  FF E1              jmp  ecx               ; jump to dst
+\end{lstlisting}
+
+\begin{lstlisting}[title=Ziel]
+  78 56 34 12        ; data 12345678h       ; ID
+  8B 44 24 04        mov  eax, [esp+4]      ; dst
+  ...
+\end{lstlisting}
 
 Im ersten Fall stehen die Bytes der ID eines möglichen Ziels als Daten vor
 diesem im Codesegment, Zieladressen von Kontrollflusstransfers zeigen jeweils
@@ -139,11 +159,26 @@ folgende Instruktion—im Beispiel \texttt{jne error\_label}, zur
 Fehlerbehandlung, was sich durch Präparieren der Prozessorflags umgehen
 lässt—ein unerwartetes, gültiges Ziel dar.
 
+\begin{lstlisting}[title=Quelle]
+  B8 77 56 34 12     mov  eax, 12345677h    ; load ID-1
+  40                 inc  eax               ; add 1 for ID
+  39 41 04           cmp  [ecx+4], eax      ; compare w/ dst
+  75 13              jne  error_label       ; if != fail
+  FF E1              jmp  ecx               ; jump to label
+\end{lstlisting}
+
+\begin{lstlisting}[title=Ziel]
+  3E 0F 18 05        prefetchnta            ; label
+  78 56 34 12           [12345678h]         ;    ID
+  8B 44 24 04        mov  eax, [esp+4]      ; dst
+  ...
+\end{lstlisting}
+
+% TODO(hermannloose): Diese Variante wird von den Autoren später offensichtlich
+% nicht verwendet.
 Die zweite Herangehensweise löst diese Situation durch das Laden von ID–1 in
 ein Register, nachfolgendes Inkrementieren und den Vergleich der ID am Ziel mit
 dem enstandenden Wert.
-% TODO(hermannloose): Der Kommentar zur Nicht-Modifikation der Zieladresse
-% macht nur richtig Sinn mit Listings zur Illustration.
 
 \subsection{Annahmen}
 
