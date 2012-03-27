@@ -339,12 +339,12 @@ kompiliert. Daraufhin wurde einer der im Folgenden beschriebenen Fehler
 zufällig in den entstandenen Assembler-Code eingefügt:
 
 \begin{itemize}
-  \item eine Verzweigungsinstruktion wird durch ein NOP ersetzt,
+  \item eine Verzweigungsinstruktion wurde durch ein NOP ersetzt,
         d.h. zwei im Quelltext aufeinander folgende Knoten des Kontrollflussgraphen
         verschmelzen zu einem einzelnen
   % FIXME(hermannloose): Holprig.
-  \item eine unbedingte Verzweigungsinstruktion wird zufällig im Programm eingefügt
-  \item der Immediate-Operand einer Verzweigungsinstruktion wird verändert
+  \item eine unbedingte Verzweigungsinstruktion wurde zufällig im Programm eingefügt
+  \item der Immediate-Operand einer Verzweigungsinstruktion wurde verändert
 \end{itemize}
 
 % FIXME(hermannloose): Holprig.
@@ -363,7 +363,40 @@ Im zweiten Durchgang wurden die Benchmarks zusätzlich zu den eingefügten
 Fehlern auf Assemblerebene mit CFCSS ausgestattet. In der Folge erzeugten nur
 noch 3,1\% dieser Fehler unentdeckt verfälschte Programmergebnisse.
 
-% Simulationsergebnisse aus dem ursprünglichen Paper
+Die Autoren führen weiterhin Daten zum Overhead bei Größe und Ausführungszeit
+an, im Kontext der Gesamtzahl von Instruktionen jedes Benchmarks, Anzahl der
+eingefügten Instruktionen des Checking-Codes sowie der durchschnittlichen Länge
+der Basic Blocks. Für die Programmgröße beträgt der Overhead durchschnittlich
+45,2\%, für die Ausführungszeit 43,1\%.
+
+Es wird hierbei kurz bemerkt, dass rechenintensive Anwendungen ohne häufige
+Verzweigungen (im Beispiel FFT) grundsätzlich längere Basic Blocks haben und
+Overhead daher besonders bei Such- und Sortieralgorithmen mit sehr kurzen Basic
+Blocks und ständigen Verzweigungen zum Tragen kommt.
+
+\subsection{Optimierung}
+
+% FIXME(hermannloose): Evtl kann der Absatz auch einfach raus. Ist sowieso mehr
+% oder weniger abgepinselt.
+Je nach Architektur benötigt die Berechnung einer neuen Laufzeitsignatur und
+der nachfolgende Vergleich mit der erwarteten Signatur etwa zwei bis vier
+Instruktionen. Bei einer durchschnittlichen Länge eines Basic Blocks von z.B.
+sieben bis acht Instruktionen beträgt der Overhead für die Programmgröße
+zwischen 25\% und 43\%. % FIXME(hermannloose): Ich komme hier auf 20% bis 36%??
+
+Falls Fehler nicht sofort behandelt werden müssen, kann an dieser Stelle auf
+den Vergleich der Signaturen und die folgende Verzweigung verzichtet werden.
+Solange die Laufzeitsignatur korrekt aktualisiert wird, lässt sich zu jedem
+späteren Zeitpunkt feststellen, dass im Kontrollfluss Fehler vorgelegen haben.
+Der Overhead des Verfahrens lässt sich somit auf Kosten späterer
+Fehlererkennung reduzieren.
+
+Als ein mögliches Vorgehen in der Praxis schlagen die Autoren im Beispiel vor,
+statt in jeder Iteration einer Schleife nur am Ende dieser die Signaturen zu
+vergleichen, oder für sich auf höherer Ebene verzweigenden Code den
+Signaturvergleich auf den Zeitpunkt zu verschieben, an dem sich mehrere
+Verarbeitungszweige wieder vereinen. Die quantitativen Betrachtungen hierzu
+bleiben theoretischer Natur.
 
 % evtl. Zahlen aus "Lessons Learned"? Falls sich dort was spezifisches zu CFCSS
 % finden lässt, kann sein, das ist nicht weiter von EDDI (dem anderen
