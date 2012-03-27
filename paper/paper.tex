@@ -266,6 +266,8 @@ ist. % TODO(hermannloose): Zitate checken.
 
 \section{Control-Flow~Checking by Software~Signatures}
 
+% Grundsätzlich fertig.
+
 Im Gegensatz zu CFI beschäftigt sich das 2002 in \cite{oh-2002-control}
 beschriebene Verfahren \emph{Control-Flow Checking by Software Signatures}
 (CFCSS) mit der Erkennung von unerlaubtem Kontrollfluss, nachdem dieser bereits
@@ -313,6 +315,9 @@ XOR bei einem gegebenen Operanden und bekanntem Ergebnis der andere Operand
 eindeutig bestimmt, was zur sicheren Erkennung von ungültigem Kontrollfluss
 notwendig ist.
 
+% XXX(hermannloose): Weiter machen ...
+
+% Grundsätzlich fertig, kaum Eigenanteil.
 \subsection{Messungen}
 
 In \cite{oh-2002-control} finden sich zu CFCSS nur Simulationsergebnisse, wobei
@@ -374,6 +379,14 @@ Verzweigungen (im Beispiel FFT) grundsätzlich längere Basic Blocks haben und
 Overhead daher besonders bei Such- und Sortieralgorithmen mit sehr kurzen Basic
 Blocks und ständigen Verzweigungen zum Tragen kommt.
 
+% TODO(hermannloose):
+% evtl. Zahlen aus "Lessons Learned"? Falls sich dort was spezifisches zu CFCSS
+% finden lässt, kann sein, das ist nicht weiter von EDDI (dem anderen
+% Verfahren) getrennt
+% -> dort findet sich nicht viel zum Verhältnis, aber geringe Zahlen zu von
+%  CFCSS erkannten Fehlerzuständen
+
+% Grundsätzlich fertig, kaum Eigenanteil.
 \subsection{Optimierung}
 
 % FIXME(hermannloose): Evtl kann der Absatz auch einfach raus. Ist sowieso mehr
@@ -397,12 +410,6 @@ vergleichen, oder für sich auf höherer Ebene verzweigenden Code den
 Signaturvergleich auf den Zeitpunkt zu verschieben, an dem sich mehrere
 Verarbeitungszweige wieder vereinen. Die quantitativen Betrachtungen hierzu
 bleiben theoretischer Natur.
-
-% evtl. Zahlen aus "Lessons Learned"? Falls sich dort was spezifisches zu CFCSS
-% finden lässt, kann sein, das ist nicht weiter von EDDI (dem anderen
-% Verfahren) getrennt
-% -> dort findet sich nicht viel zum Verhältnis, aber geringe Zahlen zu von
-%  CFCSS erkannten Fehlerzuständen
 
 \pagebreak
 \bibliographystyle{unsrt}
