@@ -3,6 +3,7 @@
 \usepackage{ngerman}
 \usepackage[top=3cm,left=3.5cm,right=3.5cm,bottom=3cm]{geometry}
 
+\usepackage{amsmath}
 \usepackage{listings}
 
 \setromanfont{Charis SIL}
@@ -307,15 +308,50 @@ Register und einem die Kante eindeutig auszeichnenden Wert $d_i$ berechnet.
 Hierfür wählten die Autoren die XOR-Verknüpfung der Signatur des Startknotens
 der Kante $s_s$ und der Signatur des Endknotens $s_d$, d.h. $d_d \equiv s_s
 \oplus s_d$. Die Signaturfunktion ergibt sich dann zur Laufzeit als $f \equiv
-f(G, d_i) = G \oplus d_i$.  Die Autoren motivieren die Wahl von XOR damit, dass
-die Operationen AND, OR und XOR in der ALU aus weniger Gattern bestehen und
-somit die Wahrscheinlichkeit eines transienten Hardwarefehlers während der
-Berechnung der neuen Signatur geringer ausfällt. Aus dieser Menge ist nur für
-XOR bei einem gegebenen Operanden und bekanntem Ergebnis der andere Operand
-eindeutig bestimmt, was zur sicheren Erkennung von ungültigem Kontrollfluss
-notwendig ist.
+f(G, d_i) = G \oplus d_i$.
 
-% XXX(hermannloose): Weiter machen ...
+Die Autoren motivieren die Wahl von XOR damit, dass die Operationen AND, OR und
+XOR in der ALU aus weniger Gattern bestehen und somit die Wahrscheinlichkeit
+eines transienten Hardwarefehlers während der Berechnung der neuen Signatur
+geringer ausfällt. Aus dieser Menge ist nur für XOR bei einem gegebenen
+Operanden und bekanntem Ergebnis der andere Operand eindeutig bestimmt, was zur
+sicheren Erkennung von ungültigem Kontrollfluss notwendig ist.
+
+% TODO(hermannloose): Die Beispiele sind ziemlich verbose und können evtl raus.
+Enthält das GSR nun z.B. im Knoten $ v_1 $ die Laufzeitsignatur $ G_1 = s_1 $ und
+es erfolgt ein erlaubter Transfer zum Knoten $ v_2 $, so berechnet sich die neue
+Laufzeitsignatur $ G_2 $ wie folgt: $$ G_2 = f(G_1, d_2) = G_1 \oplus d_2 = s_1
+\oplus (s_1 \oplus s_2) = s_2 $$
+
+Erfolgt stattdessen ein unerlaubter Transfer von $ v_1 $ zu $ v_4 $, wobei
+$ v_4 $ für erlaubte Transfers von $ v_3 $ ein $ d_4 = s_3 \oplus s_4
+$ enthält, berechnet sich die neue Laufzeitsignatur als $$ G_4 = f(G_1, d_4)
+= G_1 \oplus d_4 = s_1 \oplus (s_3 \oplus s_4) \neq s_4 $$ und im Knoten $v_4$
+wird ein Fehler im Kontrollfluss erkannt.
+
+% TODO(hermannloose): Beispiel mit Sprung in die Mitte eines Blocks auch explizit?
+
+Damit ergibt sich allerdings ein Problem im Fall eines sogenannten
+\mbox{\emph{branch fan-in}} Knotens mit mehreren Eingangskanten. Ist im
+Beispiel $ d_5 = s_1 \oplus s_5 $, schlägt ein eigentlich gültiger Transfer von
+$ v_3 $ nach $ v_5 $ nach dem bisherigen Verfahren fehl. Es ist allerdings auch
+nicht möglich, einfach $ s_1 = s_3 $ zu setzen, weil damit ungültige Transfers
+von $ v_1 $ nach $ v_4 $ und $ v_3 $ nach $ v_2 $ nicht mehr erkannt würden.
+
+% FIXME(hermannloose): Bild.
+
+Um diese Situation zu beheben führen die Autoren einen zusätzlichen Wert
+$ D $ ein. Dieser wird vor dem Transfer im Startknoten gesetzt und im
+Zielknoten mit der berechneten Laufzeitsignatur $ G $ XOR-verknüft.  Wurde
+$ d_d $ im Zielknoten $ v_d $ als $ s_s \oplus s_d $ für einen Startknoten
+$ v_s $ bestimmt, wird $ D $ in $ v_s $ auf $ 0 $ gesetzt. Für alle anderen
+Startknoten $ v_i $ ergibt sich $ D $ als $ s_i \oplus s_s $.
+
+Erfolgt im Beispiel der Transfer von $ v_1 $ nach $ v_5 $ so gilt $$ G_5
+= f(G_1, d_5) \oplus D = s_1 \oplus (s_1 \oplus s_5) \oplus 0 = s_5 $$
+
+Für den Transfer von $ v_3 $ nach $ v_5 $ gilt $$ G_5 = f(G_3, d_5) \oplus
+D = s_3 \oplus (s_1 \oplus s_5) \oplus (s_3 \oplus s_1) = s_5 $$
 
 % Grundsätzlich fertig, kaum Eigenanteil.
 \subsection{Messungen}
