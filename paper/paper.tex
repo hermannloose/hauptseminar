@@ -286,9 +286,10 @@ Experiment\footnote{http://xweb.nrl.navy.mil/usa/publications/usa-xrb.html}
 trug neben einem strahlungsfesten RH-3000 Single-Board-Computer mit
 verschiedenen Möglichkeiten zur Erkennung und Korrektur von Hardwarefehlern ein
 äquivalentes Board aus herkömmlichen Komponenten zum
-Vergleich.\cite{argos-2002-lessons}. Für letzteres beschränkten sich
+Vergleich \cite{argos-2002-lessons}. Für letzteres beschränkten sich
 Fehlererkennung und –behebung auf Softwaremethoden, einschließlich CFCSS.
 
+% Grundsätzlich alles enthalten, muss aber noch zum Ende hin überarbeitet werden.
 \subsection{Konzept}
 
 CFCSS stützt sich wie CFI auf einen Kontrollflussgraphen, dessen Kanten
@@ -340,7 +341,6 @@ Verfahren fehl. Es ist allerdings auch nicht möglich, einfach $ s_1 = s_3 $ zu
 setzen, weil damit ungültige Transfers von $ v_1 $ nach $ v_4 $ und $ v_3
 $ nach $ v_2 $ nicht mehr erkannt würden.
 
-% FIXME(hermannloose): Bild.
 \begin{figure}
   \centering
   \includegraphics[width=0.5\textwidth]{fanin-node}
@@ -362,6 +362,8 @@ Für den Transfer von $ v_3 $ nach $ v_5 $ gilt $$ G_5 = f(G_3, d_5) \oplus
 D = s_3 \oplus (s_1 \oplus s_5) \oplus (s_3 \oplus s_1) = s_5 $$
 
 % TODO(hermannloose): "Algorithmus" genau beschreiben?
+Die Autoren geben einen einfachen Algorithmus an, um anhand eines vorliegenden
+CFGs das genannte Vorgehen zur Compilezeit zu realisieren.
 
 Es folgen Betrachtungen der Autoren zur Erkennbarkeit von ungültigen
 Kontrollflusstransfers. Zusammengefasst sagen diese aus, dass unerlaubte
@@ -392,8 +394,6 @@ In \cite{oh-2002-control} finden sich zu CFCSS nur Simulationsergebnisse, wobei
 dieses Paper in \cite{argos-2002-lessons} zitiert wird, also zu einem
 Zeitpunkt, als bereits Messwerte vom Einsatz auf dem Satelliten vorlagen.
 
-% TODO(hermannloose): Dieser Absatz ist z.B. 1-1 übersetzt. Aber ich fände es
-% ein wenig Overkill, das gesondert zu kennzeichnen?
 Die Autoren wählten sieben Benchmarks für ihre Experimente aus:
 
 \begin{itemize}
