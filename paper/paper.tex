@@ -5,6 +5,7 @@
 
 \usepackage{amsmath}
 \usepackage{listings}
+\usepackage{graphicx}
 
 \setromanfont{Charis SIL}
 \setmonofont{Courier 10 Pitch}
@@ -333,12 +334,19 @@ wird ein Fehler im Kontrollfluss erkannt.
 
 Damit ergibt sich allerdings ein Problem im Fall eines sogenannten
 \mbox{\emph{branch fan-in}} Knotens mit mehreren Eingangskanten. Ist im
-Beispiel $ d_5 = s_1 \oplus s_5 $, schlägt ein eigentlich gültiger Transfer von
-$ v_3 $ nach $ v_5 $ nach dem bisherigen Verfahren fehl. Es ist allerdings auch
-nicht möglich, einfach $ s_1 = s_3 $ zu setzen, weil damit ungültige Transfers
-von $ v_1 $ nach $ v_4 $ und $ v_3 $ nach $ v_2 $ nicht mehr erkannt würden.
+Beispiel von Abbildung~\ref{fig:fanin-node} $ d_5 = s_1 \oplus s_5 $, schlägt
+ein eigentlich gültiger Transfer von $ v_3 $ nach $ v_5 $ nach dem bisherigen
+Verfahren fehl. Es ist allerdings auch nicht möglich, einfach $ s_1 = s_3 $ zu
+setzen, weil damit ungültige Transfers von $ v_1 $ nach $ v_4 $ und $ v_3
+$ nach $ v_2 $ nicht mehr erkannt würden.
 
 % FIXME(hermannloose): Bild.
+\begin{figure}
+  \centering
+  \includegraphics[width=0.5\textwidth]{fanin-node}
+  \caption{Beispiel für \emph{branch fan-in} Knoten}
+  \label{fig:fanin-node}
+\end{figure}
 
 Um diese Situation zu beheben führen die Autoren einen zusätzlichen Wert
 $ D $ ein. Dieser wird vor dem Transfer im Startknoten gesetzt und im
