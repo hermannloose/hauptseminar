@@ -75,6 +75,7 @@ Instrumentierungssystem für x86 Binärdateien“ beschrieben.
 
 % TODO(hermannloose): Zur besseren Übersicht gerechtfertigt?
 \subsubsection{Kontrollflussgraph}
+\label{sec:cfg}
 
 Ausgangspunkt für das Verfahren ist ein \emph{Kontrollflussgraph} (CFG). Die
 Knoten dieses Graphen bezeichnen sogenannte \emph{basic blocks}—Codeabschnitte
@@ -97,7 +98,7 @@ Die Autoren führen verschiedene Möglichkeiten für die Definition eines solche
 CFGs an, wobei sie sich für ihre Experimente auf CFGs konzentrieren, die durch
 statische Analyse von Binärdateien gewonnen wurden, ebenfalls mittels Vulcan.
 
-% TODO(hermannloose): An welcher Stelle Theorie einbauen?
+% TODO(hermannloose): An welcher Stelle Theorie aus dem Theoriepaper einbauen?
 
 \subsection{Instrumentierung}
 
@@ -145,14 +146,17 @@ Instrumentierung von Funktionsaufrufen.
 \end{lstlisting}
 
 Im ersten Fall stehen die Bytes der ID eines möglichen Ziels als Daten vor
-diesem im Codesegment, Zieladressen von Kontrollflusstransfers zeigen jeweils
-auf den Beginn dieser IDs. Der ID-Check an der Quelle vergleicht den Wert an
-der Zieladresse mit einer als Immediate-Operand vorliegenden zulässigen ID.
+diesem im Codesegment, Zieladressen von Kontrollflusstransfers zeigen dabei auf
+die Instruktion hinter der ID. Der ID-Check an der Quelle vergleicht den Wert
+direkt vor der Zieladresse mit einer als Immediate-Operand vorliegenden
+zulässigen ID.
+
 % FIXME(hermannloose): Sehr holpriger Satz.
-% FIXME(hermannloose): Eigentlich hier noch nicht konkret, da theoretische Betrachungen.
+% FIXME(hermannloose): Eigentlich hier noch nicht konkret, da theoretische
+% Betrachungen.
 Schlägt dieser Vergleich fehl, erfolgt der Programmabbruch, mit einem von den
 Autoren nicht weiter spezifizierten „Windows-Mechanismus zum Melden von
-Sicherheitsverstößen“.
+Sicherheitsverstößen“. Ist die Zieladresse korrekt, erfolgt der Transfer.
 
 Als Problem wird bei dieser Methode angeführt, dass die Bytes der ID im
 Codesegment sowohl am eigentlichen Ziel als auch in den Instruktionen des
@@ -179,12 +183,20 @@ lässt—ein unerwartetes, gültiges Ziel dar.
 % TODO(hermannloose): Diese Variante wird von den Autoren später offensichtlich
 % nicht verwendet.
 Die zweite Herangehensweise löst diese Situation durch das Laden von ID–1 in
-ein Register, nachfolgendes Inkrementieren und den Vergleich der ID am Ziel mit
-dem enstandenden Wert.
+ein Register und nachfolgendes Inkrementieren dieses Werts. Die ID am Ziel wird
+durch den Immediate-Operand einer x86 Prefetch-Instruktion ohne Seiteneffekte
+für die Ausführung des Programms dargestellt. Ist der Vergleich der zulässigen
+ID im Register mit diesem Operanden erfolgreich, erfolgt der Transfer zur
+Prefetch-Instruktion.
+% TODO(hermannloose): Wie sieht der Instruktionsoverhead aus? Ist das
+% Anspringen der Prefetch-Instruktion wirklich die sinnvollste Wahl?
 
 \subsection{Annahmen}
 
-Die Autoren setzen für den Einsatz von CFI drei Annahmen voraus:
+% Überleitung: keine.
+
+Die Autoren setzen für die Aufrechterhaltung der von CFI versprochenen
+Garantien drei Annahmen voraus:
 
 \begin{description}
 
@@ -210,8 +222,45 @@ Die Autoren setzen für den Einsatz von CFI drei Annahmen voraus:
 
 \end{description}
 
-Es folgen einige Betrachtungen zum Verhalten des Systems, falls eine oder
-mehrere Annahmen nicht gelten.
+Es folgt eine kurze Betrachtung zum Verhalten des Systems, falls z.B. die
+Voraussetzung NXD nicht gilt.
+
+% One more paragraph chock full of handwaving ...
+
+% Übersetzt. Weil's mir auch irgendwie zuviel ist.
+\subsubsection{Äquivalenz von Zielen}
+
+Daraufhin wird die in \ref{sec:cfg} getroffene Annahme, dass Knoten, deren
+Eingangskanten gemeinsame Startknoten haben, äquivalente Ziele darstellen,
+anhand des Beispiels einer Sprache mit Vererbung näher beleuchtet. Angenommen
+werden zwei Typen $ T $ und $ T' $, sodass $ T' $ ein Subtyp\footnote{in
+\cite{abadi-2005-control-msr} als „Supertyp“, vermutlich fehlerhaft} von
+$ T $ ist.  Des weiteren haben beide eine Methode \texttt{toString}. Der Aufruf
+von \texttt{toString} auf $ T $ hat in diesem Fall ein Ziel $ m $, während der
+Aufruf auf $ T' $ zwei mögliche Ziele $ m $ und $ m' $ hat. In diesem Fall
+wären $ m $ und $ m' $ nicht tatsächlich äquivalent, eine CFI-Instrumentierung
+unter dieser Annahme würde aber zu möglichem Kontrollfluss zu $ m' $ von
+\texttt{toString} Aufrufen auf $ T $ führen.
+
+Die Autoren nennen mehrere Varianten, derartigen Code mit der Äquivalenzannahme
+vereinbar zu machen. Eine Möglichkeit ist Codeduplizierung, mit dem Extremfall
+des kompletten Inlinings von Funktionen. An dieser Stelle erfolgt zudem der
+Verweis auf eine unspezifische, „einfache Konstruktion“, welche Knoten im CFG in
+mehrere Knoten aufteilt, für die beweisbar sei, dass in den entstehenden
+Graphen überlappende Mengen von Zielknoten stets identischen sind.
+
+Ein zweites Vorgehen wäre das Einbetten von mehreren IDs von möglichen Zielen
+an der Quelle eines Transfers, oder der Vergleich von nur einer Teilmenge der
+Bits der Ziel-IDs.
+
+Schließlich lässt sich die Annahme auch durch simples Hinzufügen von Kanten zu
+einem CFG herstellen, unter Inkaufnahme des anfangs beschriebenen Verlusts an
+Präzision des CFGs. Die Autoren argumentieren jedoch, dass auch ein relativ
+grober CFG häufig zufriedenstellende Ergebnisse erzielen kann, als
+Extrembeispiele werden die Verwendung nur einer einzigen ID bzw. zweier IDs—für
+den Beginn von Funktionen und mögliche Rückkehrorte—angeführt, die z.B. Sprünge
+in die Mitte von Funktionen bereits erfolgreich verhindern können.
+
 
 \subsection{Messungen}
 
@@ -343,7 +392,7 @@ $ nach $ v_2 $ nicht mehr erkannt würden.
 
 \begin{figure}
   \centering
-  \includegraphics[width=0.5\textwidth]{fanin-node}
+  \includegraphics[width=0.35\textwidth]{fanin-node}
   \caption{Beispiel für \emph{branch fan-in} Knoten}
   \label{fig:fanin-node}
 \end{figure}
