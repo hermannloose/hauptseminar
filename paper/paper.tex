@@ -361,6 +361,30 @@ Erfolgt im Beispiel der Transfer von $ v_1 $ nach $ v_5 $ so gilt $$ G_5
 Für den Transfer von $ v_3 $ nach $ v_5 $ gilt $$ G_5 = f(G_3, d_5) \oplus
 D = s_3 \oplus (s_1 \oplus s_5) \oplus (s_3 \oplus s_1) = s_5 $$
 
+% TODO(hermannloose): "Algorithmus" genau beschreiben?
+
+Es folgen Betrachtungen der Autoren zur Erkennbarkeit von ungültigen
+Kontrollflusstransfers. Zusammengefasst sagen diese aus, dass unerlaubte
+Verzweigungen zu einem Knoten erkannt werden, ungeachtet dessen welche
+Instruktion in diesem Knoten getroffen wird. Ebenso erfasst das Verfahren das
+Entfernen von unbedingten Verzweigungen am Ende eines Knotens, da dieser mit
+seinem Nachfolger im Code verschmilzt und die Signaturfunktion des
+Nachfolgerknotens eine ungültige Laufzeitsignatur generiert.
+
+Als weiteres Korollar wird angeführt, dass das Einfügen einer
+Verzweigungsinstruktion in einen Knoten erkannt wird, solange diese Verzweigung
+auf Knotenebene keine erlaubte ist. An dieser Stelle gehen die Autoren nicht
+weiter auf den Fall ein, dass eine Verzweigung eingefügt wird, welche laut CFG
+gültig ist—diese Gültigkeit bezieht sich jedoch implizit nur auf die
+Instruktion am Ende des Basic Blocks. In dieser Situation würden Instruktionen
+im Knoten welche nach der eingefügten Verzweigung folgen übersprungen, ohne
+dass fehlerhafter Kontrollfluss feststellbar wäre.
+
+Da bei den im folgenden Abschnitt angegebenen Messungen trotz des Einsatzes von
+CFCSS ein geringer Prozentsatz von unentdeckt verfälschten Programmergebnissen
+sichtbar wird, scheint das genannte Problem tatsächlich eine Fehlerquelle
+darzustellen.
+
 % Grundsätzlich fertig, kaum Eigenanteil.
 \subsection{Messungen}
 
