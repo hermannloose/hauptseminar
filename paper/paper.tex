@@ -261,6 +261,29 @@ Extrembeispiele werden die Verwendung nur einer einzigen ID bzw. zweier IDs—f�
 den Beginn von Funktionen und mögliche Rückkehrorte—angeführt, die z.B. Sprünge
 in die Mitte von Funktionen bereits erfolgreich verhindern können.
 
+\subsection{Praktische Implementierung}
+
+Die Autoren teilen CFI als Verfahren noch in mehrere Phasen auf, welche sich
+nach ihrer Aussage größtenteils unabhängig voneinander betrachten lassen.
+
+Die erste Phase betrifft die Generierung der später verwendeten CFGs. Neben der
+von den Autoren selbst verwendeten Analyse von Binärdateien werden nochmals
+andere Möglichkeiten wie Kontrollflussanalyse in Quelltexten und explizite
+Sicherheitspolicies erwähnt. Diese sollten austauschbar sein und können für den
+konkreten Fall passend gewählt werden, da die späteren, auf dem CFG aufbauenden
+Phasen nicht davon abhängen, wie dieser gewonnen wurde.
+
+Nach der Instrumentierung—als separate Phase—kann die UNQ-Annahme z.B. zur
+Installationszeit und nach jeder Neuinstallation oder Veränderung von Software
+sichergestellt werden.
+
+Als letzten Schritt schlagen die Autoren zur Ladezeit eine erneute
+Verifikationsphase vor, in der abermals die korrekte Einfügung von IDs und
+ID-Checks sowie die UNQ-Annahme überprüft wird. Als „signifikanter Gewinn“ wird
+herausgestellt, dass die Vertrauenswürdigkeit von CFI damit unabhängig von der
+Komplexität der vorherigen Phasen sei.
+
+% TODO(hermannloose): Left off here.
 
 \subsection{Messungen}
 
