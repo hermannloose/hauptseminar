@@ -67,6 +67,8 @@ Kontrollflusstransfers, deren Ziel im Programm erst zur Laufzeit bestimmt wird,
 schließlich hat ein solcher Angreifer auf Transfers mit konstantem Ziel, wie
 z.B. direkte Funktionsaufrufe, keinen Einfluss.
 
+\label{intro-impl}
+
 Um die Anwendung von CFI für existierende Software zu ermöglichen, wählten die
 Autoren den Weg der Binärinstrumentierung von bereits übersetzten Programmen.
 Durchgeführt wurde diese Instrumentierung mittels \emph{Vulcan}
@@ -158,12 +160,14 @@ Schlägt dieser Vergleich fehl, erfolgt der Programmabbruch, mit einem von den
 Autoren nicht weiter spezifizierten „Windows-Mechanismus zum Melden von
 Sicherheitsverstößen“. Ist die Zieladresse korrekt, erfolgt der Transfer.
 
-Als Problem wird bei dieser Methode angeführt, dass die Bytes der ID im
-Codesegment sowohl am eigentlichen Ziel als auch in den Instruktionen des
-ID-Checks vorkommen. Damit stellt die unmittelbar auf die Vergleichsoperation
-folgende Instruktion—im Beispiel \texttt{jne error\_label}, zur
-Fehlerbehandlung, was sich durch Präparieren der Prozessorflags umgehen
-lässt—ein unerwartetes, gültiges Ziel dar.
+\label{instrumentation-variant1}
+
+Als Problem wird bei dieser Methode angeführt,
+dass die Bytes der ID im Codesegment sowohl am eigentlichen Ziel als auch in
+den Instruktionen des ID-Checks vorkommen. Damit stellt die unmittelbar auf die
+Vergleichsoperation folgende Instruktion ein unerwartetes, gültiges Ziel dar,
+im Beispiel ergäbe sich nach einem Transfer zu \texttt{jne error\_label} bei
+\texttt{jmp ecx} eine Endlosschleife.
 
 \begin{lstlisting}[title=Quelle]
   B8 77 56 34 12     mov  eax, 12345677h    ; load ID-1
@@ -182,6 +186,8 @@ lässt—ein unerwartetes, gültiges Ziel dar.
 
 % TODO(hermannloose): Diese Variante wird von den Autoren später offensichtlich
 % nicht verwendet.
+\label{instrumentation-variant2}
+
 Die zweite Herangehensweise löst diese Situation durch das Laden von ID–1 in
 ein Register und nachfolgendes Inkrementieren dieses Werts. Die ID am Ziel wird
 durch den Immediate-Operand einer x86 Prefetch-Instruktion ohne Seiteneffekte
@@ -253,6 +259,7 @@ Ein zweites Vorgehen wäre das Einbetten von mehreren IDs von möglichen Zielen
 an der Quelle eines Transfers, oder der Vergleich von nur einer Teilmenge der
 Bits der Ziel-IDs.
 
+\label{coarsecfg}
 Schließlich lässt sich die Annahme auch durch simples Hinzufügen von Kanten zu
 einem CFG herstellen, unter Inkaufnahme des anfangs beschriebenen Verlusts an
 Präzision des CFGs. Die Autoren argumentieren jedoch, dass auch ein relativ
@@ -283,7 +290,18 @@ ID-Checks sowie die UNQ-Annahme überprüft wird. Als „signifikanter Gewinn“
 herausgestellt, dass die Vertrauenswürdigkeit von CFI damit unabhängig von der
 Komplexität der vorherigen Phasen sei.
 
-% TODO(hermannloose): Left off here.
+CFI wurde von den Autoren für Windows auf der x86-Architektur implementiert.
+Sowohl zur Instrumentierung als auch zur Gewinnung des CFGs wurde das in
+\ref{intro-impl} angesprochene Vulcan verwendet. Der betrachtete CFG wird
+relativ grob angenommen (vgl. \ref{coarsecfg}), so sind die Adressen aller
+existierenden Funktionen gültige Ziele aller \texttt{call}-Instruktionen, was
+die Analyse stark vereinfacht.
+
+Für die Instrumentierung wurde ohne weitere Erklärung die erste Variante aus
+\ref{instrumentation-variant1} gewählt, trotz des dort beschriebenen Nachteils
+der direkten Einbettung der Ziel-ID in die Instruktionen des ID-Checks. Da
+diese Variante mit vier statt fünf Instruktionen auskommt, ist denkbar, dass
+hier günstigere Zahlen für den Overhead des Verfahrens erreicht werden sollten.
 
 \subsection{Messungen}
 
