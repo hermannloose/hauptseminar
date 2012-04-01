@@ -305,6 +305,8 @@ hier günstigere Zahlen für den Overhead des Verfahrens erreicht werden sollten
 
 \subsection{Messungen}
 
+\subsubsection{Performance}
+
 Die in \cite{abadi-2009-control-tissec} diskutierten Messungen beziehen auf
 bekannte Benchmarks aus dem SPEC-Paket. Sie wurden auf einem Pentium 4 x86 mit
 1.8GHz und 512MB RAM unter Verwendung von Windows XP SP2 im \emph{Safe Mode},
@@ -321,6 +323,36 @@ Programm belief sich auf 8\%. Die Laufzeit der instrumentierten Programme stieg
 um durchschnittlich 16\%. Die Autoren bewerten diesen Overhead als akzeptabel
 und verweisen—ohne weitere Ausführungen—auf Möglichkeiten der Optimierung für
 die x86 Implementierung von CFI.
+
+\subsubsection{Sicherheit}
+
+Der Abschnitt zu Experimenten im Bezug auf Sicherheit wird von den Autoren mit
+den Worten eingeleitet, es sei „schwierig, die gewonnene Sicherheit einer jeden
+gegebenen Technik zu quantifizieren“. Die Effekte von bisher nicht ausgenutzten
+Schwachstellen seien nicht vorhersehbar, reale Angriffe bezögen sich häufig auf
+systemspezifische Details und könnten oftmals durch triviale Änderungen an
+diesen Details, ohne „wirklichen Sicherheitsgewinn“, verhindert werden.
+
+Es folgt die Beschreibung einiger „gut bekannter Exploits“—ohne explizite
+Angabe, ob hier tatsächlich Experimente erfolgt sind—mit der Bemerkung, dass
+CFI die meisten dieser Angriffe verhindert hätte, sofern sie auf Ausbrüchen aus
+dem erlaubten Kontrollfluss aufbauen.
+
+Als detailliertes Beispiel wird eine C-Funktion zur Medianberechnung
+beschrieben, bei der CFI—zumindest in der Theorie—das Überschreiben eines
+Funktionspointers durch einen Bufferoverflow und die nachfolgende Ausnutzung
+dieser Schwachstelle verhindert hätte. Es wird erneut darauf hingewiesen, dass
+selbst ein sehr grober CFG hier bereits Schutz böte.
+
+Als „abschließende Gruppe von Experimenten“—hier ist weiterhin unklar, ob und
+falls ja, welche weiteren, praktischen Experimente erfolgt sind—portierten die
+Autoren 18 Tests für das „Verhindern dynamischer Bufferoverflow-Exploits“ aus
+\cite{wilander2003comparison}, welche betrachten, ob ein Angreifer direkt
+selbst gewählten Shellcode ausführen kann. Diese Tests wurden von den Autoren
+um jump-to-\texttt{libc} und \emph{pointer subterfuge}-Angriffe erweitert. Alle
+diese Exploits wurden durch die CFI-Instrumentierung erfolgreich verhindert.
+
+% TODO(hermannloose): Left off here.
 
 % Kritik: wenig sicherheitsrelevante Ergebnisse, bereits 2004 im ersten Entwurf
 % nur Sektion für Performancemessungen angelegt!
