@@ -75,7 +75,6 @@ Durchgeführt wurde diese Instrumentierung mittels \emph{Vulcan}
 \cite{edwards-vulcan}, von den Autoren als „reifes, state-of-the-art
 Instrumentierungssystem für x86 Binärdateien“ beschrieben.
 
-% TODO(hermannloose): Zur besseren Übersicht gerechtfertigt?
 \subsubsection{Kontrollflussgraph}
 \label{sec:cfg}
 
@@ -184,8 +183,6 @@ im Beispiel ergäbe sich nach einem Transfer zu \texttt{jne error\_label} bei
   ...
 \end{lstlisting}
 
-% TODO(hermannloose): Diese Variante wird von den Autoren später offensichtlich
-% nicht verwendet.
 \label{instrumentation-variant2}
 
 Die zweite Herangehensweise löst diese Situation durch das Laden von ID–1 in
@@ -231,9 +228,6 @@ Garantien drei Annahmen voraus:
 Es folgt eine kurze Betrachtung zum Verhalten des Systems, falls z.B. die
 Voraussetzung NXD nicht gilt.
 
-% One more paragraph chock full of handwaving ...
-
-% Übersetzt. Weil's mir auch irgendwie zuviel ist.
 \subsubsection{Äquivalenz von Zielen}
 
 Daraufhin wird die in \ref{sec:cfg} getroffene Annahme, dass Knoten, deren
@@ -355,7 +349,6 @@ selbst gewählten Shellcode ausführen kann. Diese Tests wurden von den Autoren
 um jump-to-\texttt{libc} und \emph{pointer subterfuge}-Angriffe erweitert. Alle
 diese Exploits wurden durch die CFI-Instrumentierung erfolgreich verhindert.
 
-% FIXME(hermannloose): Besseren Titel finden.
 \subsection{CFI als Grundlage für andere Verfahren}
 
 % TODO(hermannloose): Zitate für IRMs und SMAC?
@@ -365,12 +358,10 @@ Reihe anderer, ebenfalls softwarebasierter Mechanismen dienen. Die in
 \cite{abadi-2009-control-tissec} beleuchteten sind \emph{Inlined Reference
 Monitors} (IRMs) und \emph{Software Memory Access-Control} (SMAC).
 
-% wie erkläre ich die zwei Verfahren, ohne hier einfach das Paper übersetzt zu
-% reproduzieren? (oder ist das legitim?)
+% TODO(hermannloose): Left off here.
 
-% FIXME(hermannloose): Anderen Titel finden.
-% Ausblick nach sieben Jahren ist etwas müßig.
-\subsection{Ausblick}
+% Grundsätzlich fertig.
+\subsection{Fazit}
 
 % Kritik: an dem Thema hat sich seit 2005 nichts getan
 \cite{abadi-2009-control-tissec} erschien zuerst im Februar 2005 als Technical
@@ -383,8 +374,6 @@ runtime code generation and other dynamic additions of code“, seit 2007 und in
 considered working on […] handling runtime code generation and other dynamic
 additions of code“, was nahelegt, dass hier kein weiterer Fortschritt erfolgt
 ist. % TODO(hermannloose): Zitate checken.
-
-% beleuchten: ist Overhead ein Problem?
 
 \section{Control-Flow~Checking by Software~Signatures}
 
@@ -420,13 +409,11 @@ Register} (GSR), welches zur Laufzeit jeweils die Signatur des aktuellen
 Knotens enthalten sollte. Ist dies nicht der Fall, liegt fehlerhafter
 Kontrollfluss vor.
 
-% FIXME(hermannloose): Holprig, verbose.
 Es folgt zunächst die Betrachtung für den Fall einer einzelnen eingehenden
 Kante in einen Knoten. Der neue Inhalt des GSRs wird beim Eintritt in den
 Knoten durch eine Signaturfunktion $f$ aus der aktuellen Signatur $G$ im
 Register und einem die Kante eindeutig auszeichnenden Wert $d_i$ berechnet.
 
-% TODO(hermannloose): Sollte die Wahl von XOR evtl einfacher abgespeist werden?
 Hierfür wählten die Autoren die XOR-Verknüpfung der Signatur des Startknotens
 der Kante $s_s$ und der Signatur des Endknotens $s_d$, d.h. $d_d \equiv s_s
 \oplus s_d$. Die Signaturfunktion ergibt sich dann zur Laufzeit als $f \equiv
@@ -439,7 +426,6 @@ geringer ausfällt. Aus dieser Menge ist nur für XOR bei einem gegebenen
 Operanden und bekanntem Ergebnis der andere Operand eindeutig bestimmt, was zur
 sicheren Erkennung von ungültigem Kontrollfluss notwendig ist.
 
-% TODO(hermannloose): Die Beispiele sind ziemlich verbose und können evtl raus.
 Enthält das GSR nun z.B. im Knoten $ v_1 $ die Laufzeitsignatur $ G_1 = s_1 $ und
 es erfolgt ein erlaubter Transfer zum Knoten $ v_2 $, so berechnet sich die neue
 Laufzeitsignatur $ G_2 $ wie folgt: $$ G_2 = f(G_1, d_2) = G_1 \oplus d_2 = s_1
@@ -450,8 +436,6 @@ $ v_4 $ für erlaubte Transfers von $ v_3 $ ein $ d_4 = s_3 \oplus s_4
 $ enthält, berechnet sich die neue Laufzeitsignatur als $$ G_4 = f(G_1, d_4)
 = G_1 \oplus d_4 = s_1 \oplus (s_3 \oplus s_4) \neq s_4 $$ und im Knoten $v_4$
 wird ein Fehler im Kontrollfluss erkannt.
-
-% TODO(hermannloose): Beispiel mit Sprung in die Mitte eines Blocks auch explizit?
 
 Damit ergibt sich allerdings ein Problem im Fall eines sogenannten
 \mbox{\emph{branch fan-in}} Knotens mit mehreren Eingangskanten. Ist im
@@ -507,7 +491,7 @@ CFCSS ein geringer Prozentsatz von unentdeckt verfälschten Programmergebnissen
 sichtbar wird, scheint das genannte Problem tatsächlich eine Fehlerquelle
 darzustellen.
 
-% Grundsätzlich fertig, kaum Eigenanteil.
+% Grundsätzlich fertig.
 \subsection{Messungen}
 
 In \cite{oh-2002-control} finden sich zu CFCSS nur Simulationsergebnisse, wobei
@@ -523,8 +507,7 @@ Die Autoren wählten sieben Benchmarks für ihre Experimente aus:
   \item Quicksort
   \item Insertsort
   \item Türme von Hanoi
-  % TODO(hermannloose): Siehe Notiz.
-  \item Shuffle – \emph{nicht weiter spezifiziert, was darunter zu verstehen ist}
+  \item Shuffle
 \end{itemize}
 
 Die zugehörigen Quelltexte wurden zunächst ohne CFCSS für die MIPS-Architektur
@@ -574,7 +557,7 @@ Blocks und ständigen Verzweigungen zum Tragen kommt.
 % -> dort findet sich nicht viel zum Verhältnis, aber geringe Zahlen zu von
 %  CFCSS erkannten Fehlerzuständen
 
-% Grundsätzlich fertig, kaum Eigenanteil.
+% Grundsätzlich fertig.
 \subsection{Optimierung}
 
 % FIXME(hermannloose): Evtl kann der Absatz auch einfach raus. Ist sowieso mehr
