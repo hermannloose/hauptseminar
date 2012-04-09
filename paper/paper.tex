@@ -133,24 +133,29 @@ Instrumentierung von Funktionsaufrufen.
   frame=lines
 }
 
-\begin{lstlisting}[title=Quelle]
-  81 39 78 56 34 12  cmp  [ecx], 12345678h  ; comp ID & dst
-  75 13              jne  error_label       ; if != fail
-  8D 49 04           lea  ecx, [ecx+4]      ; skip ID at dst
-  FF E1              jmp  ecx               ; jump to dst
-\end{lstlisting}
+\begin{figure}
+  \begin{lstlisting}[title=Quelle]
+    81 39 78 56 34 12  cmp  [ecx], 12345678h  ; comp ID & dst
+    75 13              jne  error_label       ; if != fail
+    8D 49 04           lea  ecx, [ecx+4]      ; skip ID at dst
+    FF E1              jmp  ecx               ; jump to dst
+  \end{lstlisting}
 
-\begin{lstlisting}[title=Ziel]
-  78 56 34 12        ; data 12345678h       ; ID
-  8B 44 24 04        mov  eax, [esp+4]      ; dst
-  ...
-\end{lstlisting}
+  \begin{lstlisting}[title=Ziel]
+    78 56 34 12        ; data 12345678h       ; ID
+    8B 44 24 04        mov  eax, [esp+4]      ; dst
+    ...
+  \end{lstlisting}
 
-Im ersten Fall stehen die Bytes der ID eines möglichen Ziels als Daten vor
-diesem im Codesegment, Zieladressen von Kontrollflusstransfers zeigen dabei auf
-die Instruktion hinter der ID. Der ID-Check an der Quelle vergleicht den Wert
-direkt vor der Zieladresse mit einer als Immediate-Operand vorliegenden
-zulässigen ID.
+  \caption{Instrumentationsvariante 1}
+  \label{fig:instrumentation-variant1}
+\end{figure}
+
+Im ersten Fall (Abb.~\ref{fig:instrumentation-variant1}) stehen die Bytes der ID
+eines möglichen Ziels als Daten vor diesem im Codesegment, Zieladressen von
+Kontrollflusstransfers zeigen dabei auf die Instruktion hinter der ID. Der
+ID-Check an der Quelle vergleicht den Wert direkt vor der Zieladresse mit einer
+als Immediate-Operand vorliegenden zulässigen ID.
 
 % FIXME(hermannloose): Sehr holpriger Satz.
 % FIXME(hermannloose): Eigentlich hier noch nicht konkret, da theoretische
@@ -168,29 +173,34 @@ Vergleichsoperation folgende Instruktion ein unerwartetes, gültiges Ziel dar,
 im Beispiel ergäbe sich nach einem Transfer zu \texttt{jne error\_label} bei
 \texttt{jmp ecx} eine Endlosschleife.
 
-\begin{lstlisting}[title=Quelle]
-  B8 77 56 34 12     mov  eax, 12345677h    ; load ID-1
-  40                 inc  eax               ; add 1 for ID
-  39 41 04           cmp  [ecx+4], eax      ; compare w/ dst
-  75 13              jne  error_label       ; if != fail
-  FF E1              jmp  ecx               ; jump to label
-\end{lstlisting}
+\begin{figure}
+  \begin{lstlisting}[title=Quelle]
+    B8 77 56 34 12     mov  eax, 12345677h    ; load ID-1
+    40                 inc  eax               ; add 1 for ID
+    39 41 04           cmp  [ecx+4], eax      ; compare w/ dst
+    75 13              jne  error_label       ; if != fail
+    FF E1              jmp  ecx               ; jump to label
+  \end{lstlisting}
 
-\begin{lstlisting}[title=Ziel]
-  3E 0F 18 05        prefetchnta            ; label
-  78 56 34 12           [12345678h]         ;    ID
-  8B 44 24 04        mov  eax, [esp+4]      ; dst
-  ...
-\end{lstlisting}
+  \begin{lstlisting}[title=Ziel]
+    3E 0F 18 05        prefetchnta            ; label
+    78 56 34 12           [12345678h]         ;    ID
+    8B 44 24 04        mov  eax, [esp+4]      ; dst
+    ...
+  \end{lstlisting}
+
+  \caption{Instrumentationsvariante 2}
+  \label{fig:instrumentation-variant2}
+\end{figure}
 
 \label{instrumentation-variant2}
 
-Die zweite Herangehensweise löst diese Situation durch das Laden von ID–1 in
-ein Register und nachfolgendes Inkrementieren dieses Werts. Die ID am Ziel wird
-durch den Immediate-Operand einer x86 Prefetch-Instruktion ohne Seiteneffekte
-für die Ausführung des Programms dargestellt. Ist der Vergleich der zulässigen
-ID im Register mit diesem Operanden erfolgreich, erfolgt der Transfer zur
-Prefetch-Instruktion.
+Die zweite Herangehensweise (Abb.~\ref{fig:instrumentation-variant2}) löst diese
+Situation durch das Laden von ID–1 in ein Register und nachfolgendes
+Inkrementieren dieses Werts. Die ID am Ziel wird durch den Immediate-Operand
+einer x86 Prefetch-Instruktion ohne Seiteneffekte für die Ausführung des
+Programms dargestellt. Ist der Vergleich der zulässigen ID im Register mit
+diesem Operanden erfolgreich, erfolgt der Transfer zur Prefetch-Instruktion.
 % TODO(hermannloose): Wie sieht der Instruktionsoverhead aus? Ist das
 % Anspringen der Prefetch-Instruktion wirklich die sinnvollste Wahl?
 
