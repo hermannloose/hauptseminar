@@ -103,6 +103,7 @@ statische Analyse von Binärdateien gewonnen wurden, ebenfalls mittels Vulcan.
 
 \subsection{Instrumentierung}
 
+% TODO(hermannloose): Björns Kommentar.
 Liegt ein solcher CFG vor, muss demnach zur Laufzeit vor Kontrollflusstransfers
 mit dynamisch bestimmtem Ziel sichergestellt werden, dass vom aktuellen Knoten
 zum jeweiligen Zielknoten eine Kante im CFG existiert.
@@ -366,7 +367,49 @@ Aufgrund seiner Garantien für den Kontrollfluss von Programmen kann CFI zudem
 als Grundlage für den Einsatz bzw. die Optimierung und Vereinfachung einer
 Reihe anderer, ebenfalls softwarebasierter Mechanismen dienen. Die in
 \cite{abadi-2009-control-tissec} beleuchteten sind \emph{Inlined Reference
-Monitors} (IRMs) und \emph{Software Memory Access-Control} (SMAC).
+Monitors} (IRMs), \emph{Software Fault Isolation} (SFI) und \emph{Software
+Memory Access-Control} (SMAC).
+
+IRMs dienen der Durchsetzung von Sicherheitsvorschriften, indem sie in
+betroffene Programme Code einfügen, der die Gültigkeit bestimmter Bedingungen
+zu bestimmten Zeitpunkten prüft. Eine Voraussetzung für ihren Einsatz ist damit
+die Garantie, dass diese Checks nicht umgangen werden können und jeglicher
+Speicher, der speziell zur Durchführung dieser Aufgabe notwendig ist, vor dem
+Zugriff Dritter geschützt bleibt.
+
+Die erste Forderung kann durch CFI direkt gewährleistet werden. Die im
+Folgenden besprochene Technik SMAC kann zudem private Speicherbereiche zur
+Verfügung stellen, auf die nur Code innerhalb des IRMs zugreifen kann.
+
+SFI stellt einen speziellen Typ von IRM dar, welcher Speicherzugriffe auf
+bestimmte Speicherregionen beschränkt. Hierbei wird eine gewählte Anzahl der
+oberen Bits einer Adresse entsprechend maskiert, sodass entweder die zulässige
+Region getroffen wird oder eine Region, in welcher diese oberen Bits alle
+genullt sind. Wenn der Zugriff auf die letztere Region mit anderen Mitteln—etwa
+Zugriffsrechten innerhalb der Seitentabellen—verhindert wird, können mit diesem
+Verfahren verschiedene isolierte Speicherregionen in Software geschaffen
+werden.
+
+Mit CFI kann der Overhead von SFI in manchen Situationen verringert werden. Die
+Autoren geben als Beispiel eine Funktion an, welche die Elemente eines Arrays
+aufsummiert. Im Normalfall muss hier bei jedem Schleifendurchlauf vor dem
+Speicherzugriff die Basisadresse des Arrays entsprechend maskiert werden, da
+die Integrität dieses Wertes nicht gewährleistet werden kann. Die Garantien von
+CFI bezüglich des Kontrollflusses ermöglichen es, die Maskierung einmalig vor
+dem Eintritt in die Schleife durchzuführen. Da Kontrollflusstransfers in die
+Mitte der Funktion—mit beliebigen Werten in den relevanten Registern—verhindert
+werden, kann in nachfolgenden Iterationen darauf vertraut werden, dass sich die
+Basisadresse des Arrays nicht verändert hat.
+
+Die Autoren implementierten diese Optimierung für zwei Benchmarks:
+\texttt{hotlist}, welches eine verlinkte Liste von Ganzzahlen nach einem
+bestimmten Wert durchsucht und die Referenzimplementierung von MD5 in C. Die
+konventionellen SFI Systeme MiSFIT und SASI zeigten für \texttt{hotlist} nach
+Angabe der Autoren Overheads von 140\% bzw. 260\%, die mittels CFI optimierte
+Version dagegen nur 22\%. Im Fall von MD5 werden für die Systeme PittSFIeld und
+MiSFIT 23\% bis 50\% angegeben, die Autoren erzielten mit der optimierten
+Version hier 4,7\% Overhead. Hier ist unklar, inwiefern der Overhead von CFI an
+sich bereits eingeflossen ist.
 
 % TODO(hermannloose): Left off here.
 
