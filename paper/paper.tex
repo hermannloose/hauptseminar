@@ -370,6 +370,8 @@ Reihe anderer, ebenfalls softwarebasierter Mechanismen dienen. Die in
 Monitors} (IRMs), \emph{Software Fault Isolation} (SFI) und \emph{Software
 Memory Access-Control} (SMAC).
 
+\subsubsection{Inlined Reference Monitors}
+
 IRMs dienen der Durchsetzung von Sicherheitsvorschriften, indem sie in
 betroffene Programme Code einfügen, der die Gültigkeit bestimmter Bedingungen
 zu bestimmten Zeitpunkten prüft. Eine Voraussetzung für ihren Einsatz ist damit
@@ -380,6 +382,8 @@ Zugriff Dritter geschützt bleibt.
 Die erste Forderung kann durch CFI direkt gewährleistet werden. Die im
 Folgenden besprochene Technik SMAC kann zudem private Speicherbereiche zur
 Verfügung stellen, auf die nur Code innerhalb des IRMs zugreifen kann.
+
+\subsubsection{Software Fault Isolation}
 
 SFI stellt einen speziellen Typ von IRM dar, welcher Speicherzugriffe auf
 bestimmte Speicherregionen beschränkt. Hierbei wird eine gewählte Anzahl der
@@ -412,6 +416,44 @@ Version hier 4,7\% Overhead. Hier ist unklar, inwiefern der Overhead von CFI an
 sich bereits eingeflossen ist.
 
 % TODO(hermannloose): Left off here.
+\subsubsection{Protected Shadow Call Stack}
+
+\label{return-solution}
+
+% FIXME(hermannloose): Wie soll der letzte Punkt überhaupt passieren?
+Wie in \ref{return-problem} beschrieben besteht bei CFI die Schwierigkeit,
+sicherzustellen, dass Funktionen nur an ihren jüngsten Aufrufort zurückkehren
+können. Die Autoren schlagen als generelle Lösung einen sogenannten
+\emph{Shadow Call Stack} vor, welcher die benötigten Informationen ähnlich dem
+normalen Programmstack in einem mittels SMAC geschützten Speicherbereich
+vorhält. Zusätzlich zum Schutz vor dem Zugriff eines Angreifers muss
+sichergestellt werden, dass normale Programmausführung die Integrität des
+Stacks nicht gefährdet.
+
+% FIXME(hermannloose): Kurzer Absatz zur Nutzung mittels SMAC.
+
+Die beschriebene Implementierung verzichtet unter den Gesichtspunkten von
+Einfachheit und Effizienz wiederum auf SMAC zugunsten der Nutzung von
+x86-Segmenten. Durch CFI kann zur Laufzeit garantiert werden, dass nur
+entsprechend instrumentierte \texttt{call}- und \texttt{ret}-Instruktionen auf
+das Segment zugreifen können, in welchem der Shadow Call Stack vorgehalten
+wird. Statische Verifizierung im Vorfeld kann zusätzlich sicherstellen, dass
+diese Instruktionen nur korrekt mittels \emph{push} und \emph{pop} diesen Stack
+modifizieren. Ohne CFI wäre es einem Angreifer an diesem Punkt eventuell
+möglich, durch Sprünge zu günstig im Programm vorkommenen Instruktionen
+unerlaubt andere Segmentdeskriptoren zu laden.
+
+Da laut den Autoren das Segment \emph{GS} in Windows-Anwendungen nicht benutzt
+wird, lockern sie in der Folge auch diese Bedingung und stellen wieder durch
+statische Verifizierung die ausschließliche Verwendung dieses Registers durch
+CFI-Code sicher.
+
+Bei Nutzung dieses Shadow Call Stacks ist implizit garantiert, dass jeder
+Funktionsaufruf korrekt zurückkehrt—die Returnadresse liegt außerhalb des
+Zugriffs eines Angreifers—damit entfällt als weitere Optimierung der ID-Check
+bei \texttt{ret}-Instruktionen.
+
+% TODO(hermannloose): Ergebnisse.
 
 % Grundsätzlich fertig.
 \subsection{Fazit}
