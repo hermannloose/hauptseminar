@@ -417,6 +417,8 @@ sich bereits eingeflossen ist.
 
 % TODO(hermannloose): Left off here.
 \subsubsection{Protected Shadow Call Stack}
+\subsubsection{Shadow Call Stack}
+\subsubsection{Shadow Call Stack}
 
 \label{return-solution}
 
@@ -451,9 +453,24 @@ CFI-Code sicher.
 Bei Nutzung dieses Shadow Call Stacks ist implizit garantiert, dass jeder
 Funktionsaufruf korrekt zurückkehrt—die Returnadresse liegt außerhalb des
 Zugriffs eines Angreifers—damit entfällt als weitere Optimierung der ID-Check
-bei \texttt{ret}-Instruktionen.
+bei Returninstruktionen.
 
-% TODO(hermannloose): Ergebnisse.
+Es folgt eine kurze Betrachtung zur Anlage dieses Segments beim Programmstart
+und eventuelle Unterstützung vom Betriebssystem, z.B. zur automatischen
+Anpassung der Segmentgröße zur Laufzeit. Die Autoren haben dies allerdings
+nicht praktisch evaluiert.
+
+Zur Messung wurden dieselben Benchmarks wie bereits in \ref{cfi-performance}
+verwendet. Die Ergebnisse verstehen sich inklusive des Overheads für den
+Einsatz von CFI generell, mit Ersparnissen aufgrund der beschriebenen
+Optimierung für Returninstruktionen. Für die Benchmarks \texttt{crafty},
+\texttt{eon} und \texttt{gap} ist eine starke Reduktion des Overheads
+feststellbar, während er für \texttt{mcf}, \texttt{parser} und \texttt{vpr} von
+zuvor eher geringen Werten zum Teil um das 50-fache ansteigt.
+
+Die Autoren bezeichnen diese Werte bei einem Durchschnitt von 21\% trotzdem als
+„bescheiden“ und nennen speziell 5\% für \texttt{gzip} und 11\% für
+\texttt{gcc}.
 
 % Grundsätzlich fertig.
 \subsection{Fazit}
