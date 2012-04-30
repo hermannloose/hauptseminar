@@ -368,20 +368,24 @@ als Grundlage für den Einsatz bzw. die Optimierung und Vereinfachung einer
 Reihe anderer, ebenfalls softwarebasierter Mechanismen dienen. Die in
 \cite{abadi-2009-control-tissec} beleuchteten sind \emph{Inlined Reference
 Monitors} (IRMs), \emph{Software Fault Isolation} (SFI) und \emph{Software
-Memory Access-Control} (SMAC).
+Memory Access-Control} (SMAC), sowie ein auf dem letzteren Verfahren
+aufbauender \emph{Shadow Call Stack}, welcher korrekte Funktionsrückkehr an den
+jüngsten Aufrufort sicherstellen kann.
 
 \subsubsection{Inlined Reference Monitors}
 
-IRMs dienen der Durchsetzung von Sicherheitsvorschriften, indem sie in
-betroffene Programme Code einfügen, der die Gültigkeit bestimmter Bedingungen
-zu bestimmten Zeitpunkten prüft. Eine Voraussetzung für ihren Einsatz ist damit
-die Garantie, dass diese Checks nicht umgangen werden können und jeglicher
-Speicher, der speziell zur Durchführung dieser Aufgabe notwendig ist, vor dem
-Zugriff Dritter geschützt bleibt.
+IRMs dienen der Durchsetzung von Sicherheitsvorschriften (z.B. das Verbot,
+Dateien mit bestimmten Namen zu schreiben), indem sie in betroffene Programme
+Code einfügen, der die Gültigkeit bestimmter Bedingungen zu bestimmten
+Zeitpunkten prüft. Eine Voraussetzung für ihren Einsatz ist damit die Garantie,
+dass diese Checks nicht umgangen werden können und jeglicher Speicher, der
+speziell zur Durchführung dieser Aufgabe notwendig ist, vor dem Zugriff Dritter
+geschützt bleibt.
 
 Die erste Forderung kann durch CFI direkt gewährleistet werden. Die im
-Folgenden besprochene Technik SMAC kann zudem private Speicherbereiche zur
-Verfügung stellen, auf die nur Code innerhalb des IRMs zugreifen kann.
+Folgenden in \ref{smac} besprochene Technik SMAC kann zudem private
+Speicherbereiche zur Verfügung stellen, auf die nur Code innerhalb des IRMs
+zugreifen kann.
 
 \subsubsection{Software Fault Isolation}
 
@@ -415,14 +419,36 @@ MiSFIT 23\% bis 50\% angegeben, die Autoren erzielten mit der optimierten
 Version hier 4,7\% Overhead. Hier ist unklar, inwiefern der Overhead von CFI an
 sich bereits eingeflossen ist.
 
-% TODO(hermannloose): Left off here.
-\subsubsection{Protected Shadow Call Stack}
-\subsubsection{Shadow Call Stack}
-\subsubsection{Shadow Call Stack}
+\subsubsection{Software Memory Access Control}
+\label{smac}
 
+SMAC wird daraufhin als Erweiterung von SFI eingeführt, bei der „verschiedene
+Zugriffsprüfungen an verschiedenen Instruktionen im zu beschränkenden Programm
+eingefügt werden“. Laut den Autoren lassen sich damit Sicherheitsvorschriften
+abbilden, die über traditionelle Speicherzugriffsbeschränkungen hinaus gehen.
+
+Es bleibt in der Folge unklar, an welchen Stellen sich dies tatsächlich
+qualitativ von dem mit SFI überschriebenen Vorgehen unterscheidet. Als Beispiel
+angeführt werden eine \texttt{call}-Instruktion und die dazugehörige
+\texttt{ret}-Instruktion, bei denen jeweils die Zieladresse in der zuvor
+beschriebenen Weise maskiert wird, um auf diesem Weg die zulässigen Regionen
+für den Funktionsaufruf und die anschließende Rückkehr festzulegen.
+
+% FIXME(hermannloose): Von SFI abgrenzen, evtl mittels Theoriepaper.
+
+Als Resultat kann SMAC genutzt werden, um z.B. wie zuvor beschrieben private
+Speicherbereiche für IRMs zu schaffen. Weiterhin kann SMAC die für CFI
+benötigten Annahmen NWC und NXD gewährleisten, indem im ersten Fall
+Schreibzugriffe in Codebereiche und im zweiten Fall Kontrollflusstransfers
+außerhalb dieser Bereiche unterbunden werden.
+
+% TODO(hermannloose): Verweis auf Theoriepaper zu diesem Punkt.
+\cite{abadi-2005-theory-fmse}
+
+% Grundsätzlich fertig.
+\subsubsection{Shadow Call Stack}
 \label{return-solution}
 
-% FIXME(hermannloose): Wie soll der letzte Punkt überhaupt passieren?
 Wie in \ref{return-problem} beschrieben besteht bei CFI die Schwierigkeit,
 sicherzustellen, dass Funktionen nur an ihren jüngsten Aufrufort zurückkehren
 können. Die Autoren schlagen als generelle Lösung einen sogenannten
@@ -431,8 +457,6 @@ normalen Programmstack in einem mittels SMAC geschützten Speicherbereich
 vorhält. Zusätzlich zum Schutz vor dem Zugriff eines Angreifers muss
 sichergestellt werden, dass normale Programmausführung die Integrität des
 Stacks nicht gefährdet.
-
-% FIXME(hermannloose): Kurzer Absatz zur Nutzung mittels SMAC.
 
 Die beschriebene Implementierung verzichtet unter den Gesichtspunkten von
 Einfachheit und Effizienz wiederum auf SMAC zugunsten der Nutzung von
@@ -451,9 +475,9 @@ statische Verifizierung die ausschließliche Verwendung dieses Registers durch
 CFI-Code sicher.
 
 Bei Nutzung dieses Shadow Call Stacks ist implizit garantiert, dass jeder
-Funktionsaufruf korrekt zurückkehrt—die Returnadresse liegt außerhalb des
-Zugriffs eines Angreifers—damit entfällt als weitere Optimierung der ID-Check
-bei Returninstruktionen.
+Funktionsaufruf korrekt zurückkehrt, da die Returnadresse außerhalb des
+Zugriffs eines Angreifers liegt. Damit entfällt als weitere Optimierung der
+ID-Check bei Returninstruktionen.
 
 Es folgt eine kurze Betrachtung zur Anlage dieses Segments beim Programmstart
 und eventuelle Unterstützung vom Betriebssystem, z.B. zur automatischen
@@ -478,14 +502,14 @@ Die Autoren bezeichnen diese Werte bei einem Durchschnitt von 21\% trotzdem als
 % Kritik: an dem Thema hat sich seit 2005 nichts getan
 \cite{abadi-2009-control-tissec} erschien zuerst im Februar 2005 als Technical
 Report von Microsoft Research \cite{abadi-2005-control-msr}. Spätere
-Veröffentlichungen 2005 und 2007 sind inhaltlich identisch. Zum Problem des
-Umgangs mit selbstmodifizierendem Code und Codegenerierung zur Laufzeit erfolgt
-in \cite{abadi-2005-control-msr} der Verweis „we are working on […] handling
-runtime code generation and other dynamic additions of code“, seit 2007 und in
-\cite{abadi-2009-control-tissec} lautet diese Stelle nunmehr „we have
-considered working on […] handling runtime code generation and other dynamic
-additions of code“, was nahelegt, dass hier kein weiterer Fortschritt erfolgt
-ist. % TODO(hermannloose): Zitate checken.
+Veröffentlichungen 2005 und 2007 sind bis auf wenige Umformulierungen
+inhaltlich identisch. Zum Problem des Umgangs mit selbstmodifizierendem Code
+und Codegenerierung zur Laufzeit erfolgt in \cite{abadi-2005-control-msr} der
+Verweis „we are working on […] handling runtime code generation and other
+dynamic additions of code“, seit 2007 und in \cite{abadi-2009-control-tissec}
+lautet diese Stelle nunmehr „we have considered working on […] handling runtime
+code generation and other dynamic additions of code“, was nahelegt, dass hier
+kein weiterer Fortschritt erfolgt ist. % TODO(hermannloose): Zitate checken.
 
 \section{Control-Flow~Checking by Software~Signatures}
 
