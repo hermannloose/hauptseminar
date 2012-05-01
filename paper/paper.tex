@@ -48,8 +48,8 @@ dennoch umfassenden Garantien gegenüber starken Angreifern. Zudem sollten
 praxistaugliche Techniken möglichst auf existierenden Code bzw. sogar auf
 existierende Binärdateien anwendbar sein.
 
-CFI als softwarebasierte Lösung wurde von den Autoren für Windows auf der x86
-Architektur entwickelt und getestet. Die Möglichkeit einer
+CFI als softwarebasierte Lösung wurde von den Autoren für Windows auf der
+x86-Architektur entwickelt und getestet. Die Möglichkeit einer
 Hardwareimplementierung von CFI wird hierbei kurz angesprochen, aber für die
 nähere Zukunft als unwahrscheinlich bewertet. Ergänzend dazu wurde CFI in
 \cite{abadi-2005-theory-fmse} für ein vereinfachtes Maschinenmodel
@@ -119,11 +119,13 @@ Instruktionen für Funktionsaufrufe und –rückkehr, welche jeweils die zuläss
 Ziel-ID als Operand erhalten, sowie einer effektfreien Label-Instruktion, deren
 Operand die ID des Knotens ist, welcher mit diesem Label versehen wird.
 
+\label{return-problem}
+
 An dieser Stelle identifizieren die Autoren als Problem, dass mit dieser
 Vorgehensweise nicht sichergestellt werden kann, dass Funktionen ausschließlich
 zu ihrem jüngsten Aufrufort zurückkehren können. Es erfolgt der Verweis auf die
-spätere Beschreibung eines auf CFI aufbauenden Verfahrens, welches diese
-Beschränkung ermöglicht.
+spätere Beschreibung\footnote{siehe \ref{return-solution}} eines auf CFI
+aufbauenden Verfahrens, welches diese Beschränkung ermöglicht.
 
 Die Autoren evaluieren in der Folge zwei konkrete Möglichkeiten der
 Instrumentierung von Funktionsaufrufen.
@@ -199,7 +201,7 @@ im Beispiel ergäbe sich nach einem Transfer zu \texttt{jne error\_label} bei
 Die zweite Herangehensweise (Abb.~\ref{fig:instrumentation-variant2}) löst diese
 Situation durch das Laden von ID–1 in ein Register und nachfolgendes
 Inkrementieren dieses Werts. Die ID am Ziel wird durch den Immediate-Operand
-einer x86 Prefetch-Instruktion ohne Seiteneffekte für die Ausführung des
+einer x86-Prefetch-Instruktion ohne Seiteneffekte für die Ausführung des
 Programms dargestellt. Ist der Vergleich der zulässigen ID im Register mit
 diesem Operanden erfolgreich, erfolgt der Transfer zur Prefetch-Instruktion.
 % TODO(hermannloose): Wie sieht der Instruktionsoverhead aus? Ist das
@@ -313,9 +315,10 @@ hier günstigere Zahlen für den Overhead des Verfahrens erreicht werden sollten
 
 % Grundsätzlich fertig.
 \subsubsection{Performance}
+\label{cfi-performance}
 
 Die in \cite{abadi-2009-control-tissec} diskutierten Messungen beziehen auf
-bekannte Benchmarks aus dem SPEC-Paket. Sie wurden auf einem Pentium 4 x86 mit
+bekannte Benchmarks aus dem SPEC-Paket. Sie wurden auf einem Pentium 4 mit
 1.8GHz und 512MB RAM unter Verwendung von Windows XP SP2 im \emph{Safe Mode},
 bei dem ein Großteil der Dienste und Kernelmodule deaktiviert ist,
 durchgeführt. Die untersuchten Programme wurden in Microsoft Visual C++ 7.1 mit
@@ -329,7 +332,7 @@ Der durchschnittliche Zuwachs an Größe für ein mit CFI instrumentiertes
 Programm belief sich auf 8\%. Die Laufzeit der instrumentierten Programme stieg
 um durchschnittlich 16\%. Die Autoren bewerten diesen Overhead als akzeptabel
 und verweisen—ohne weitere Ausführungen—auf Möglichkeiten der Optimierung für
-die x86 Implementierung von CFI.
+die x86-Implementierung von CFI.
 
 % Grundsätzlich fertig.
 \subsubsection{Sicherheit}
@@ -387,6 +390,7 @@ Folgenden in \ref{smac} besprochene Technik SMAC kann zudem private
 Speicherbereiche zur Verfügung stellen, auf die nur Code innerhalb des IRMs
 zugreifen kann.
 
+% Fertig.
 \subsubsection{Software Fault Isolation}
 
 SFI stellt einen speziellen Typ von IRM dar, welcher Speicherzugriffe auf
@@ -419,6 +423,7 @@ MiSFIT 23\% bis 50\% angegeben, die Autoren erzielten mit der optimierten
 Version hier 4,7\% Overhead. Hier ist unklar, inwiefern der Overhead von CFI an
 sich bereits eingeflossen ist.
 
+% Grundsätzlich fertig.
 \subsubsection{Software Memory Access Control}
 \label{smac}
 
@@ -434,16 +439,17 @@ angeführt werden eine \texttt{call}-Instruktion und die dazugehörige
 beschriebenen Weise maskiert wird, um auf diesem Weg die zulässigen Regionen
 für den Funktionsaufruf und die anschließende Rückkehr festzulegen.
 
-% FIXME(hermannloose): Von SFI abgrenzen, evtl mittels Theoriepaper.
-
 Als Resultat kann SMAC genutzt werden, um z.B. wie zuvor beschrieben private
 Speicherbereiche für IRMs zu schaffen. Weiterhin kann SMAC die für CFI
 benötigten Annahmen NWC und NXD gewährleisten, indem im ersten Fall
 Schreibzugriffe in Codebereiche und im zweiten Fall Kontrollflusstransfers
 außerhalb dieser Bereiche unterbunden werden.
 
-% TODO(hermannloose): Verweis auf Theoriepaper zu diesem Punkt.
-\cite{abadi-2005-theory-fmse}
+Dabei garantiert SMAC, dass von einem Angreifer kein für CFI gültig
+erscheinender Code geschrieben werden kann, während CFI sicherstellt, dass die
+für SMAC verantwortlichen Instruktionen nicht umgangen werden können. Hierzu
+findet sich in \cite{abadi-2005-theory-fmse} für ein vereinfachtes
+Maschinenmodell ein Theorem, dessen Beweis jedoch dem Leser überlassen wird.
 
 % Grundsätzlich fertig.
 \subsubsection{Shadow Call Stack}
@@ -647,7 +653,7 @@ Die Autoren wählten sieben Benchmarks für ihre Experimente aus:
 \end{itemize}
 
 Die zugehörigen Quelltexte wurden zunächst ohne CFCSS für die MIPS-Architektur
-kompiliert. Daraufhin wurde einer der im Folgenden beschriebenen Fehler
+compiliert. Daraufhin wurde einer der im Folgenden beschriebenen Fehler
 zufällig in den entstandenen Assembler-Code eingefügt:
 
 \begin{itemize}
