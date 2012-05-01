@@ -1,0 +1,731 @@
+\documentclass[11pt]{article}
+\usepackage{fontspec}
+\usepackage{ngerman}
+\usepackage[top=3cm,left=3.5cm,right=3.5cm,bottom=3cm]{geometry}
+
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{graphicx}
+
+\setromanfont{Charis SIL}
+\setmonofont{Courier 10 Pitch}
+
+\title{Control-Flow Integrity Checking}
+\author{Hermann Loose}
+
+\begin{document}
+
+\maketitle
+
+\section{Einführung}
+
+% FIXME(hermannloose): Doofer Satzanfang.
+Unerlaubter Kontrollfluss in Programmen stellt ein Problem sowohl für die
+Sicherheit der Rechnersysteme auf denen diese Programme laufen als auch für die
+Verlässlichkeit der von ihnen ausgeführten Berechnungen dar.
+
+% Blah blah?
+Es werden in der Folge zwei Verfahren betrachtet, die sich jeweils einem dieser
+beiden Aspekte widmen und einander dabei in der Vorgehensweise zum Teil sehr
+ähnlich sind.
+
+\section{Control-Flow Integrity}
+
+Das in \cite{abadi-2005-control-msr} vorgestellte Verfahren \emph{Control-Flow
+Integrity} (CFI) zielt darauf ab, Angriffe zu verhindern, die auf dem Verlassen
+des erlaubten Kontrollflusses in einem Programm aufbauen. Beispielhaft werden
+stackbasierte Pufferüberläufe und darauf fußende Techniken, heapbasierte
+\emph{jump-to-}\texttt{libc}-Angriffe sowie \emph{pointer subterfuge}-Angriffe
+genannt.
+
+Die Autoren argumentieren, dass viele der bisher gegen solche Angriffe
+eingesetzten Mechanismen in ihrer Wirksamkeit beschränkt seien, da ihnen ein
+realistisches Angreifermodell fehlen würde und sie sich selten auf formale
+Schlüsse und häufig auf verborgene Annahmen stützten.
+
+Die Antwort auf diese Probleme seien einfach verständliche Verfahren mit
+dennoch umfassenden Garantien gegenüber starken Angreifern. Zudem sollten
+praxistaugliche Techniken möglichst auf existierenden Code bzw. sogar auf
+existierende Binärdateien anwendbar sein.
+
+CFI als softwarebasierte Lösung wurde von den Autoren für Windows auf der
+x86-Architektur entwickelt und getestet. Die Möglichkeit einer
+Hardwareimplementierung von CFI wird hierbei kurz angesprochen, aber für die
+nähere Zukunft als unwahrscheinlich bewertet. Ergänzend dazu wurde CFI in
+\cite{abadi-2005-theory-fmse} für ein vereinfachtes Maschinenmodel
+formalisiert.
+
+\subsection{Grundlagen}
+
+Das Angreifermodell für CFI beschreibt einen Angreifer, welcher „volle
+Kontrolle über das Datensegment des ausführenden Programms besitzt“. Zusätzlich
+wird die Möglichkeit zugelassen, dass der Angreifer bereits die Kontrolle über
+ein anderes Modul oder einen anderen Thread im Adressraum besitzt. Als
+tatsächliches Problem für die garantierte Einhaltung des erlaubten
+Kontrollflusses identifizieren die Autoren daraufhin all die
+Kontrollflusstransfers, deren Ziel im Programm erst zur Laufzeit bestimmt wird,
+schließlich hat ein solcher Angreifer auf Transfers mit konstantem Ziel, wie
+z.B. direkte Funktionsaufrufe, keinen Einfluss.
+
+\label{intro-impl}
+
+Um die Anwendung von CFI für existierende Software zu ermöglichen, wählten die
+Autoren den Weg der Binärinstrumentierung von bereits übersetzten Programmen.
+Durchgeführt wurde diese Instrumentierung mittels \emph{Vulcan}
+\cite{edwards-vulcan}, von den Autoren als „reifes Instrumentierungssystem für
+x86-Binärdateien auf dem aktuellen Stand der Technik“ beschrieben.
+
+\subsubsection{Kontrollflussgraph}
+\label{sec:cfg}
+
+Ausgangspunkt für das Verfahren ist ein \emph{Kontrollflussgraph} (CFG). Die
+Knoten dieses Graphen bezeichnen sogenannte \emph{basic blocks}—Codeabschnitte
+mit linearem Kontrollfluss ohne dynamische Transfers. Die gerichteten Kanten
+des Graphen geben erlaubten Kontrollfluss zwischen diesen Knoten an.
+
+Die erste Instruktion eines Knotens stellt ein erlaubtes Ziel für Transfers aus
+den Startknoten der Eingangskanten dar. Am Ende des Knotens steht jeweils eine
+Instruktion, welche ebenfalls den Kontrollfluss zur Laufzeit dynamisch bestimmt
+und deren mögliche Ziele die Endknoten der ausgehenden Kanten sind.
+
+% TODO(hermannloose): Holpriger Absatz, überarbeiten!
+Mit Vorgriff auf die spätere Implementierung erfolgt zudem die Annahme, dass
+Knoten, deren Eingangskanten gemeinsame Startknoten haben, äquivalente Ziele
+darstellen, d.h. auf der Knotenmenge des Graphen ergeben sich
+Äquivalenzklassen. Die Implikationen dieser Forderung werden später beleuchtet.
+% FIXME(hermannloose): "Implikationen bezüglich was?" -> ausführen?
+
+Die Autoren führen verschiedene Möglichkeiten für die Definition eines solchen
+CFGs an, wobei sie sich für ihre Experimente auf CFGs konzentrieren, die durch
+statische Analyse von Binärdateien gewonnen wurden, ebenfalls mittels Vulcan.
+
+% TODO(hermannloose): An welcher Stelle Theorie aus dem Theoriepaper einbauen?
+
+\subsection{Instrumentierung}
+
+% TODO(hermannloose): Björns Kommentar.
+Liegt ein solcher CFG vor, muss demnach zur Laufzeit vor Kontrollflusstransfers
+mit dynamisch bestimmtem Ziel sichergestellt werden, dass vom aktuellen Knoten
+zum jeweiligen Zielknoten eine Kante im CFG existiert.
+
+Dazu wird jeder Äquivalenzklasse von Zielknoten im CFG eine ID zugewiesen und
+direkt vor jedem Zielknoten im Codesegment eingefügt. Vor dem Transfer kann
+daraufhin überprüft werden, ob die ID am aktuellen Ziel—dessen Adresse sich
+z.B. in einem Register befindet—mit der ID der für diese Instruktion zulässigen
+Ziele übereinstimmt.
+
+Diese einleitende Betrachtung erfolgt unter Verwendung von erdachten
+Instruktionen für Funktionsaufrufe und –rückkehr, welche jeweils die zulässige
+Ziel-ID als Operand erhalten, sowie einer effektfreien Label-Instruktion, deren
+Operand die ID des Knotens ist, welcher mit diesem Label versehen wird.
+
+\label{return-problem}
+
+An dieser Stelle identifizieren die Autoren als Problem, dass mit dieser
+Vorgehensweise nicht sichergestellt werden kann, dass Funktionen ausschließlich
+zu ihrem jüngsten Aufrufort zurückkehren können. Es erfolgt der Verweis auf die
+spätere Beschreibung\footnote{siehe \ref{return-solution}} eines auf CFI
+aufbauenden Verfahrens, welches diese Beschränkung ermöglicht.
+
+Die Autoren evaluieren in der Folge zwei konkrete Möglichkeiten der
+Instrumentierung von Funktionsaufrufen.
+
+\lstset{
+  language=[x86masm]Assembler,
+  basicstyle=\ttfamily\small,
+  frame=lines
+}
+
+\begin{figure}
+  \begin{lstlisting}[title=Quelle]
+    81 39 78 56 34 12  cmp  [ecx], 12345678h  ; comp ID & dst
+    75 13              jne  error_label       ; if != fail
+    8D 49 04           lea  ecx, [ecx+4]      ; skip ID at dst
+    FF E1              jmp  ecx               ; jump to dst
+  \end{lstlisting}
+
+  \begin{lstlisting}[title=Ziel]
+    78 56 34 12        ; data 12345678h       ; ID
+    8B 44 24 04        mov  eax, [esp+4]      ; dst
+    ...
+  \end{lstlisting}
+
+  \caption{Instrumentationsvariante 1}
+  \label{fig:instrumentation-variant1}
+\end{figure}
+
+Im ersten Fall (Abb.~\ref{fig:instrumentation-variant1}) stehen die Bytes der ID
+eines möglichen Ziels als Daten vor diesem im Codesegment, Zieladressen von
+Kontrollflusstransfers zeigen dabei auf die Instruktion hinter der ID. Der
+ID-Check an der Quelle vergleicht den Wert direkt vor der Zieladresse mit einer
+als Immediate-Operand vorliegenden zulässigen ID.
+
+% FIXME(hermannloose): Sehr holpriger Satz.
+% FIXME(hermannloose): Eigentlich hier noch nicht konkret, da theoretische
+% Betrachungen.
+Schlägt dieser Vergleich fehl, erfolgt der Programmabbruch, mit einem von den
+Autoren nicht weiter spezifizierten „Windows-Mechanismus zum Melden von
+Sicherheitsverstößen“. Ist die Zieladresse korrekt, erfolgt der Transfer.
+
+\label{instrumentation-variant1}
+
+Als Problem wird bei dieser Methode angeführt,
+dass die Bytes der ID im Codesegment sowohl am eigentlichen Ziel als auch in
+den Instruktionen des ID-Checks vorkommen. Damit stellt die unmittelbar auf die
+Vergleichsoperation folgende Instruktion ein unerwartetes, gültiges Ziel dar,
+im Beispiel ergäbe sich nach einem Transfer zu \texttt{jne error\_label} bei
+\texttt{jmp ecx} eine Endlosschleife.
+
+\begin{figure}
+  \begin{lstlisting}[title=Quelle]
+    B8 77 56 34 12     mov  eax, 12345677h    ; load ID-1
+    40                 inc  eax               ; add 1 for ID
+    39 41 04           cmp  [ecx+4], eax      ; compare w/ dst
+    75 13              jne  error_label       ; if != fail
+    FF E1              jmp  ecx               ; jump to label
+  \end{lstlisting}
+
+  \begin{lstlisting}[title=Ziel]
+    3E 0F 18 05        prefetchnta            ; label
+    78 56 34 12           [12345678h]         ;    ID
+    8B 44 24 04        mov  eax, [esp+4]      ; dst
+    ...
+  \end{lstlisting}
+
+  \caption{Instrumentationsvariante 2}
+  \label{fig:instrumentation-variant2}
+\end{figure}
+
+\label{instrumentation-variant2}
+
+Die zweite Herangehensweise (Abb.~\ref{fig:instrumentation-variant2}) löst diese
+Situation durch das Laden von ID–1 in ein Register und nachfolgendes
+Inkrementieren dieses Werts. Die ID am Ziel wird durch den Immediate-Operand
+einer x86-Prefetch-Instruktion ohne Seiteneffekte für die Ausführung des
+Programms dargestellt. Ist der Vergleich der zulässigen ID im Register mit
+diesem Operanden erfolgreich, erfolgt der Transfer zur Prefetch-Instruktion.
+% TODO(hermannloose): Wie sieht der Instruktionsoverhead aus? Ist das
+% Anspringen der Prefetch-Instruktion wirklich die sinnvollste Wahl?
+
+\subsection{Annahmen}
+
+% Überleitung: keine.
+
+Die Autoren setzen für die Aufrechterhaltung der von CFI versprochenen
+Garantien drei Annahmen voraus:
+
+\begin{description}
+
+  \item [UNQ] \emph{Unique IDs:} „Nach der Instrumentierung dürfen die als IDs
+  gewählten Bitmuster nirgendwo im Codesegment vorkommen außer in IDs und
+  ID-Checks.“
+
+  Die Autoren schlagen einen mindestens 32 Bit großen Schlüsselraum für die
+  Wahl von IDs vor, um diese Annahme zu gewährleisten.
+
+  \item [NWC] \emph{Non-Writable Code:} „Es darf dem Programm nicht möglich
+  sein, das Codesegment zur Laufzeit zu verändern. Ansonsten wäre es einem
+  Angreifer möglich, CFI z.B. durch das Überschreiben eines ID-Checks zu
+  umgehen.“
+
+  Während dies auf den meisten aktuellen Systemen gilt, weisen die Autoren auf
+  problematische Fälle wie das Laden dynamisch gelinkter Bibliotheken und
+  Codegenerierung zur Laufzeit hin.
+
+  \item [NXD] \emph{Non-Executable Data:} „Es darf dem Programm nicht möglich
+  sein, Daten als Code auszuführen. Ansonsten könnte ein Angreifer die
+  Ausführung von Daten, welche mit der korrekten ID versehen sind, anstoßen.“
+
+\end{description}
+
+Es folgt eine kurze Betrachtung zum Verhalten des Systems, falls z.B. die
+Voraussetzung NXD nicht gilt.
+
+\subsubsection{Äquivalenz von Zielen}
+
+Daraufhin wird die in \ref{sec:cfg} getroffene Annahme, dass Knoten, deren
+Eingangskanten gemeinsame Startknoten haben, äquivalente Ziele darstellen,
+anhand des Beispiels einer Sprache mit Vererbung näher beleuchtet. Angenommen
+werden zwei Typen $ T $ und $ T' $, sodass $ T' $ ein Subtyp\footnote{in
+\cite{abadi-2005-control-msr} als „Supertyp“, vermutlich fehlerhaft} von
+$ T $ ist.  Des weiteren haben beide eine Methode \texttt{toString}. Der Aufruf
+von \texttt{toString} auf $ T $ hat in diesem Fall ein Ziel $ m $, während der
+Aufruf auf $ T' $ zwei mögliche Ziele $ m $ und $ m' $ hat. In diesem Fall
+wären $ m $ und $ m' $ nicht tatsächlich äquivalent, eine CFI-Instrumentierung
+unter dieser Annahme würde aber zu möglichem Kontrollfluss zu $ m' $ von
+\texttt{toString} Aufrufen auf $ T $ führen.
+
+Die Autoren nennen mehrere Varianten, derartigen Code mit der Äquivalenzannahme
+vereinbar zu machen. Eine Möglichkeit ist Codeduplizierung, mit dem Extremfall
+des kompletten Inlinings von Funktionen. An dieser Stelle erfolgt zudem der
+Verweis auf eine unspezifische, „einfache Konstruktion“, welche Knoten im CFG in
+mehrere Knoten aufteilt, für die beweisbar sei, dass in den entstehenden
+Graphen überlappende Mengen von Zielknoten stets identischen sind.
+
+Ein zweites Vorgehen wäre das Einbetten von mehreren IDs von möglichen Zielen
+an der Quelle eines Transfers, oder der Vergleich von nur einer Teilmenge der
+Bits der Ziel-IDs.
+
+\label{coarsecfg}
+Schließlich lässt sich die Annahme auch durch simples Hinzufügen von Kanten zu
+einem CFG herstellen, unter Inkaufnahme des anfangs beschriebenen Verlusts an
+Präzision des CFGs. Die Autoren argumentieren jedoch, dass auch ein relativ
+grober CFG häufig zufriedenstellende Ergebnisse erzielen kann, als
+Extrembeispiele werden die Verwendung nur einer einzigen ID bzw. zweier IDs—für
+den Beginn von Funktionen und mögliche Rückkehrorte—angeführt, die z.B. Sprünge
+in die Mitte von Funktionen bereits erfolgreich verhindern können.
+
+\subsection{Praktische Implementierung}
+
+Die Autoren teilen CFI als Verfahren noch in mehrere Phasen auf, welche sich
+nach ihrer Aussage größtenteils unabhängig voneinander betrachten lassen.
+
+Die erste Phase betrifft die Generierung der später verwendeten CFGs. Neben der
+von den Autoren selbst verwendeten Analyse von Binärdateien werden nochmals
+andere Möglichkeiten wie Kontrollflussanalyse in Quelltexten und explizite
+Sicherheitspolicies erwähnt. Diese sollten austauschbar sein und können für den
+konkreten Fall passend gewählt werden, da die späteren, auf dem CFG aufbauenden
+Phasen nicht davon abhängen, wie dieser gewonnen wurde.
+
+Nach der Instrumentierung—als separate Phase—kann die UNQ-Annahme z.B. zur
+Installationszeit und nach jeder Neuinstallation oder Veränderung von Software
+sichergestellt werden.
+
+Als letzten Schritt schlagen die Autoren zur Ladezeit eine erneute
+Verifikationsphase vor, in der abermals die korrekte Einfügung von IDs und
+ID-Checks sowie die UNQ-Annahme überprüft wird. Als „signifikanter Gewinn“ wird
+herausgestellt, dass die Vertrauenswürdigkeit von CFI damit unabhängig von der
+Komplexität der vorherigen Phasen sei.
+
+CFI wurde von den Autoren für Windows auf der x86-Architektur implementiert.
+Sowohl zur Instrumentierung als auch zur Gewinnung des CFGs wurde das in
+\ref{intro-impl} angesprochene Vulcan verwendet. Der betrachtete CFG wird
+relativ grob angenommen (vgl. \ref{coarsecfg}), so sind die Adressen aller
+existierenden Funktionen gültige Ziele aller \texttt{call}-Instruktionen, was
+die Analyse stark vereinfacht.
+
+Für die Instrumentierung wurde ohne weitere Erklärung die erste Variante aus
+\ref{instrumentation-variant1} gewählt, trotz des dort beschriebenen Nachteils
+der direkten Einbettung der Ziel-ID in die Instruktionen des ID-Checks. Da
+diese Variante mit vier statt fünf Instruktionen auskommt, ist denkbar, dass
+hier günstigere Zahlen für den Overhead des Verfahrens erreicht werden sollten.
+
+% Grundsätzlich fertig.
+\subsection{Messungen}
+
+% Grundsätzlich fertig.
+\subsubsection{Performance}
+\label{cfi-performance}
+
+Die in \cite{abadi-2009-control-tissec} diskutierten Messungen beziehen auf
+bekannte Benchmarks aus dem SPEC-Paket. Sie wurden auf einem Pentium 4 mit
+1.8GHz und 512MB RAM unter Verwendung von Windows XP SP2 im \emph{Safe Mode},
+bei dem ein Großteil der Dienste und Kernelmodule deaktiviert ist,
+durchgeführt. Die untersuchten Programme wurden in Microsoft Visual C++ 7.1 mit
+allen verfügbaren Optimierungen compiliert.
+
+Die ermittelten Werte stellen jeweils den Durchschnitt von drei Durchläufen
+dar, die Standardabweichung von weniger als einem Prozent wurde von den Autoren
+als vernachlässigbar angesehen.
+
+Der durchschnittliche Zuwachs an Größe für ein mit CFI instrumentiertes
+Programm belief sich auf 8\%. Die Laufzeit der instrumentierten Programme stieg
+um durchschnittlich 16\%. Die Autoren bewerten diesen Overhead als akzeptabel
+und verweisen—ohne weitere Ausführungen—auf Möglichkeiten der Optimierung für
+die x86-Implementierung von CFI.
+
+% Grundsätzlich fertig.
+\subsubsection{Sicherheit}
+
+Der Abschnitt zu Experimenten im Bezug auf Sicherheit wird von den Autoren mit
+den Worten eingeleitet, es sei „schwierig, die gewonnene Sicherheit einer jeden
+gegebenen Technik zu quantifizieren“. Die Effekte von bisher nicht ausgenutzten
+Schwachstellen seien nicht vorhersehbar, reale Angriffe bezögen sich häufig auf
+systemspezifische Details und könnten oftmals durch triviale Änderungen an
+diesen Details, ohne „wirklichen Sicherheitsgewinn“, verhindert werden.
+
+Es folgt die Beschreibung einiger „gut bekannter Exploits“—ohne explizite
+Angabe, ob hier tatsächlich Experimente erfolgt sind—mit der Bemerkung, dass
+CFI die meisten dieser Angriffe verhindert hätte, sofern sie auf Ausbrüchen aus
+dem erlaubten Kontrollfluss aufbauen.
+
+Als detailliertes Beispiel wird eine C-Funktion zur Medianberechnung
+beschrieben, bei der CFI—zumindest in der Theorie—das Überschreiben eines
+Funktionspointers durch einen Bufferoverflow und die nachfolgende Ausnutzung
+dieser Schwachstelle verhindert hätte. Es wird erneut darauf hingewiesen, dass
+selbst ein sehr grober CFG hier bereits Schutz böte.
+
+Als „abschließende Gruppe von Experimenten“—hier ist weiterhin unklar, ob und
+falls ja, welche weiteren, praktischen Experimente erfolgt sind—portierten die
+Autoren 18 Tests für das „Verhindern dynamischer Bufferoverflow-Exploits“ aus
+\cite{wilander2003comparison}, welche betrachten, ob ein Angreifer direkt
+selbst gewählten Shellcode ausführen kann. Diese Tests wurden von den Autoren
+um jump-to-\texttt{libc} und \emph{pointer subterfuge}-Angriffe erweitert. Alle
+diese Exploits wurden durch die CFI-Instrumentierung erfolgreich verhindert.
+
+\subsection{CFI als Grundlage für andere Verfahren}
+
+% TODO(hermannloose): Zitate für IRMs und SMAC?
+Aufgrund seiner Garantien für den Kontrollfluss von Programmen kann CFI zudem
+als Grundlage für den Einsatz bzw. die Optimierung und Vereinfachung einer
+Reihe anderer, ebenfalls softwarebasierter Mechanismen dienen. Die in
+\cite{abadi-2009-control-tissec} beleuchteten sind \emph{Inlined Reference
+Monitors} (IRMs), \emph{Software Fault Isolation} (SFI) und \emph{Software
+Memory Access-Control} (SMAC), sowie ein auf dem letzteren Verfahren
+aufbauender \emph{Shadow Call Stack}, welcher korrekte Funktionsrückkehr an den
+jüngsten Aufrufort sicherstellen kann.
+
+\subsubsection{Inlined Reference Monitors}
+
+IRMs dienen der Durchsetzung von Sicherheitsvorschriften (z.B. das Verbot,
+Dateien mit bestimmten Namen zu schreiben), indem sie in betroffene Programme
+Code einfügen, der die Gültigkeit bestimmter Bedingungen zu bestimmten
+Zeitpunkten prüft. Eine Voraussetzung für ihren Einsatz ist damit die Garantie,
+dass diese Checks nicht umgangen werden können und jeglicher Speicher, der
+speziell zur Durchführung dieser Aufgabe notwendig ist, vor dem Zugriff Dritter
+geschützt bleibt.
+
+Die erste Forderung kann durch CFI direkt gewährleistet werden. Die im
+Folgenden in \ref{smac} besprochene Technik SMAC kann zudem private
+Speicherbereiche zur Verfügung stellen, auf die nur Code innerhalb des IRMs
+zugreifen kann.
+
+% Fertig.
+\subsubsection{Software Fault Isolation}
+
+SFI stellt einen speziellen Typ von IRM dar, welcher Speicherzugriffe auf
+bestimmte Speicherregionen beschränkt. Hierbei wird eine gewählte Anzahl der
+oberen Bits einer Adresse entsprechend maskiert, sodass entweder die zulässige
+Region getroffen wird oder eine Region, in welcher diese oberen Bits alle
+genullt sind. Wenn der Zugriff auf die letztere Region mit anderen Mitteln—etwa
+Zugriffsrechten innerhalb der Seitentabellen—verhindert wird, können mit diesem
+Verfahren verschiedene isolierte Speicherregionen in Software geschaffen
+werden.
+
+Mit CFI kann der Overhead von SFI in manchen Situationen verringert werden. Die
+Autoren geben als Beispiel eine Funktion an, welche die Elemente eines Arrays
+aufsummiert. Im Normalfall muss hier bei jedem Schleifendurchlauf vor dem
+Speicherzugriff die Basisadresse des Arrays entsprechend maskiert werden, da
+die Integrität dieses Wertes nicht gewährleistet werden kann. Die Garantien von
+CFI bezüglich des Kontrollflusses ermöglichen es, die Maskierung einmalig vor
+dem Eintritt in die Schleife durchzuführen. Da Kontrollflusstransfers in die
+Mitte der Funktion—mit beliebigen Werten in den relevanten Registern—verhindert
+werden, kann in nachfolgenden Iterationen darauf vertraut werden, dass sich die
+Basisadresse des Arrays nicht verändert hat.
+
+Die Autoren implementierten diese Optimierung für zwei Benchmarks:
+\texttt{hotlist}, welches eine verlinkte Liste von Ganzzahlen nach einem
+bestimmten Wert durchsucht und die Referenzimplementierung von MD5 in C. Die
+konventionellen SFI Systeme MiSFIT und SASI zeigten für \texttt{hotlist} nach
+Angabe der Autoren Overheads von 140\% bzw. 260\%, die mittels CFI optimierte
+Version dagegen nur 22\%. Im Fall von MD5 werden für die Systeme PittSFIeld und
+MiSFIT 23\% bis 50\% angegeben, die Autoren erzielten mit der optimierten
+Version hier 4,7\% Overhead. Hier ist unklar, inwiefern der Overhead von CFI an
+sich bereits eingeflossen ist.
+
+% Grundsätzlich fertig.
+\subsubsection{Software Memory Access Control}
+\label{smac}
+
+SMAC wird daraufhin als Erweiterung von SFI eingeführt, bei der „verschiedene
+Zugriffsprüfungen an verschiedenen Instruktionen im zu beschränkenden Programm
+eingefügt werden“. Laut den Autoren lassen sich damit Sicherheitsvorschriften
+abbilden, die über traditionelle Speicherzugriffsbeschränkungen hinaus gehen.
+
+Es bleibt in der Folge unklar, an welchen Stellen sich dies tatsächlich
+qualitativ von dem mit SFI überschriebenen Vorgehen unterscheidet. Als Beispiel
+angeführt werden eine \texttt{call}-Instruktion und die dazugehörige
+\texttt{ret}-Instruktion, bei denen jeweils die Zieladresse in der zuvor
+beschriebenen Weise maskiert wird, um auf diesem Weg die zulässigen Regionen
+für den Funktionsaufruf und die anschließende Rückkehr festzulegen.
+
+Als Resultat kann SMAC genutzt werden, um z.B. wie zuvor beschrieben private
+Speicherbereiche für IRMs zu schaffen. Weiterhin kann SMAC die für CFI
+benötigten Annahmen NWC und NXD gewährleisten, indem im ersten Fall
+Schreibzugriffe in Codebereiche und im zweiten Fall Kontrollflusstransfers
+außerhalb dieser Bereiche unterbunden werden.
+
+Dabei garantiert SMAC, dass von einem Angreifer kein für CFI gültig
+erscheinender Code geschrieben werden kann, während CFI sicherstellt, dass die
+für SMAC verantwortlichen Instruktionen nicht umgangen werden können. Hierzu
+findet sich in \cite{abadi-2005-theory-fmse} für ein vereinfachtes
+Maschinenmodell ein Theorem, dessen Beweis jedoch dem Leser überlassen wird.
+
+% Grundsätzlich fertig.
+\subsubsection{Shadow Call Stack}
+\label{return-solution}
+
+Wie in \ref{return-problem} beschrieben besteht bei CFI die Schwierigkeit,
+sicherzustellen, dass Funktionen nur an ihren jüngsten Aufrufort zurückkehren
+können. Die Autoren schlagen als generelle Lösung einen sogenannten
+\emph{Shadow Call Stack} vor, welcher die benötigten Informationen ähnlich dem
+normalen Programmstack in einem mittels SMAC geschützten Speicherbereich
+vorhält. Zusätzlich zum Schutz vor dem Zugriff eines Angreifers muss
+sichergestellt werden, dass normale Programmausführung die Integrität des
+Stacks nicht gefährdet.
+
+Die beschriebene Implementierung verzichtet unter den Gesichtspunkten von
+Einfachheit und Effizienz wiederum auf SMAC zugunsten der Nutzung von
+x86-Segmenten. Durch CFI kann zur Laufzeit garantiert werden, dass nur
+entsprechend instrumentierte \texttt{call}- und \texttt{ret}-Instruktionen auf
+das Segment zugreifen können, in welchem der Shadow Call Stack vorgehalten
+wird. Statische Verifizierung im Vorfeld kann zusätzlich sicherstellen, dass
+diese Instruktionen nur korrekt mittels \emph{push} und \emph{pop} diesen Stack
+modifizieren. Ohne CFI wäre es einem Angreifer an diesem Punkt eventuell
+möglich, durch Sprünge zu günstig im Programm vorkommenen Instruktionen
+unerlaubt andere Segmentdeskriptoren zu laden.
+
+Da laut den Autoren das Segment \emph{GS} in Windows-Anwendungen nicht benutzt
+wird, lockern sie in der Folge auch diese Bedingung und stellen wieder durch
+statische Verifizierung die ausschließliche Verwendung dieses Registers durch
+CFI-Code sicher.
+
+Bei Nutzung dieses Shadow Call Stacks ist implizit garantiert, dass jeder
+Funktionsaufruf korrekt zurückkehrt, da die Returnadresse außerhalb des
+Zugriffs eines Angreifers liegt. Damit entfällt als weitere Optimierung der
+ID-Check bei Returninstruktionen.
+
+Es folgt eine kurze Betrachtung zur Anlage dieses Segments beim Programmstart
+und eventuelle Unterstützung vom Betriebssystem, z.B. zur automatischen
+Anpassung der Segmentgröße zur Laufzeit. Die Autoren haben dies allerdings
+nicht praktisch evaluiert.
+
+Zur Messung wurden dieselben Benchmarks wie bereits in \ref{cfi-performance}
+verwendet. Die Ergebnisse verstehen sich inklusive des Overheads für den
+Einsatz von CFI generell, mit Ersparnissen aufgrund der beschriebenen
+Optimierung für Returninstruktionen. Für die Benchmarks \texttt{crafty},
+\texttt{eon} und \texttt{gap} ist eine starke Reduktion des Overheads
+feststellbar, während er für \texttt{mcf}, \texttt{parser} und \texttt{vpr} von
+zuvor eher geringen Werten zum Teil um das 50-fache ansteigt.
+
+Die Autoren bezeichnen diese Werte bei einem Durchschnitt von 21\% trotzdem als
+„bescheiden“ und nennen speziell 5\% für \texttt{gzip} und 11\% für
+\texttt{gcc}.
+
+% Grundsätzlich fertig.
+\subsection{Fazit}
+
+% Kritik: an dem Thema hat sich seit 2005 nichts getan
+\cite{abadi-2009-control-tissec} erschien zuerst im Februar 2005 als Technical
+Report von Microsoft Research \cite{abadi-2005-control-msr}. Spätere
+Veröffentlichungen 2005 und 2007 sind bis auf wenige Umformulierungen
+inhaltlich identisch. Zum Problem des Umgangs mit selbstmodifizierendem Code
+und Codegenerierung zur Laufzeit erfolgt in \cite{abadi-2005-control-msr} der
+Verweis „we are working on […] handling runtime code generation and other
+dynamic additions of code“, seit 2007 und in \cite{abadi-2009-control-tissec}
+lautet diese Stelle nunmehr „we have considered working on […] handling runtime
+code generation and other dynamic additions of code“, was nahelegt, dass hier
+kein weiterer Fortschritt erfolgt ist. % TODO(hermannloose): Zitate checken.
+
+\section{Control-Flow~Checking by Software~Signatures}
+
+% Grundsätzlich fertig.
+
+Im Gegensatz zu CFI beschäftigt sich das 2002 in \cite{oh-2002-control}
+beschriebene Verfahren \emph{Control-Flow Checking by Software Signatures}
+(CFCSS) mit der Erkennung von unerlaubtem Kontrollfluss, nachdem dieser bereits
+aufgetreten ist. Das Augenmerk liegt dabei auf transienten oder permanenten
+Hardwarefehlern als Auslöser. Die Autoren identifizieren dadurch in der Folge
+unentdeckt bleibende, da nicht von Programmabstürzen begleitete Verfälschungen
+von Ergebnissen als Hauptproblem.
+
+Der Ausgangspunkt ist wie bei CFI eine softwarebasierte Lösung. Als Motivation
+wird das Stanford \emph{Advanced Research and Global Observation Satellite}
+(ARGOS) Projekt angeführt. Das auf diesem Satelliten befindliche
+\emph{Unconventional Stellar Aspect} (USA)
+Experiment\footnote{http://xweb.nrl.navy.mil/usa/publications/usa-xrb.html}
+trug neben einem strahlungsfesten RH-3000 Single-Board-Computer mit
+verschiedenen Möglichkeiten zur Erkennung und Korrektur von Hardwarefehlern ein
+äquivalentes Board aus herkömmlichen Komponenten zum
+Vergleich \cite{argos-2002-lessons}. Für letzteres beschränkten sich
+Fehlererkennung und –behebung auf Softwaremethoden, einschließlich CFCSS.
+
+% Grundsätzlich alles enthalten, muss aber noch zum Ende hin überarbeitet werden.
+\subsection{Konzept}
+
+CFCSS stützt sich wie CFI auf einen Kontrollflussgraphen, dessen Kanten
+erlaubten Kontrollfluss in einem Programm aufzeigen. Im Unterschied zu CFI
+erhält hier allerdings jeder Knoten $v_i$ seine eigene Signatur $s_i$. Ein vom
+Compiler oder Assembler ausgewähltes Register dient als \emph{Global Signature
+Register} (GSR), welches zur Laufzeit jeweils die Signatur des aktuellen
+Knotens enthalten sollte. Ist dies nicht der Fall, liegt fehlerhafter
+Kontrollfluss vor.
+
+Es folgt zunächst die Betrachtung für den Fall einer einzelnen eingehenden
+Kante in einen Knoten. Der neue Inhalt des GSRs wird beim Eintritt in den
+Knoten durch eine Signaturfunktion $f$ aus der aktuellen Signatur $G$ im
+Register und einem die Kante eindeutig auszeichnenden Wert $d_i$ berechnet.
+
+Hierfür wählten die Autoren die XOR-Verknüpfung der Signatur des Startknotens
+der Kante $s_s$ und der Signatur des Endknotens $s_d$, d.h. $d_d \equiv s_s
+\oplus s_d$. Die Signaturfunktion ergibt sich dann zur Laufzeit als $f \equiv
+f(G, d_i) = G \oplus d_i$.
+
+Die Autoren motivieren die Wahl von XOR damit, dass die Operationen AND, OR und
+XOR in der ALU aus weniger Gattern bestehen und somit die Wahrscheinlichkeit
+eines transienten Hardwarefehlers während der Berechnung der neuen Signatur
+geringer ausfällt. Aus dieser Menge ist nur für XOR bei einem gegebenen
+Operanden und bekanntem Ergebnis der andere Operand eindeutig bestimmt, was zur
+sicheren Erkennung von ungültigem Kontrollfluss notwendig ist.
+
+Enthält das GSR nun z.B. im Knoten $ v_1 $ die Laufzeitsignatur $ G_1 = s_1 $ und
+es erfolgt ein erlaubter Transfer zum Knoten $ v_2 $, so berechnet sich die neue
+Laufzeitsignatur $ G_2 $ wie folgt: $$ G_2 = f(G_1, d_2) = G_1 \oplus d_2 = s_1
+\oplus (s_1 \oplus s_2) = s_2 $$
+
+Erfolgt stattdessen ein unerlaubter Transfer von $ v_1 $ zu $ v_4 $, wobei
+$ v_4 $ für erlaubte Transfers von $ v_3 $ ein $ d_4 = s_3 \oplus s_4
+$ enthält, berechnet sich die neue Laufzeitsignatur als $$ G_4 = f(G_1, d_4)
+= G_1 \oplus d_4 = s_1 \oplus (s_3 \oplus s_4) \neq s_4 $$ und im Knoten $v_4$
+wird ein Fehler im Kontrollfluss erkannt.
+
+Damit ergibt sich allerdings ein Problem im Fall eines sogenannten
+\mbox{\emph{branch fan-in}} Knotens mit mehreren Eingangskanten. Ist im
+Beispiel von Abbildung~\ref{fig:fanin-node} $ d_5 = s_1 \oplus s_5 $, schlägt
+ein eigentlich gültiger Transfer von $ v_3 $ nach $ v_5 $ nach dem bisherigen
+Verfahren fehl. Es ist allerdings auch nicht möglich, einfach $ s_1 = s_3 $ zu
+setzen, weil damit ungültige Transfers von $ v_1 $ nach $ v_4 $ und $ v_3
+$ nach $ v_2 $ nicht mehr erkannt würden.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.35\textwidth]{fanin-node}
+  \caption{Beispiel für \emph{branch fan-in} Knoten}
+  \label{fig:fanin-node}
+\end{figure}
+
+Um diese Situation zu beheben führen die Autoren einen zusätzlichen Wert
+$ D $ ein. Dieser wird vor dem Transfer im Startknoten gesetzt und im
+Zielknoten mit der berechneten Laufzeitsignatur $ G $ XOR-verknüft.  Wurde
+$ d_d $ im Zielknoten $ v_d $ als $ s_s \oplus s_d $ für einen Startknoten
+$ v_s $ bestimmt, wird $ D $ in $ v_s $ auf $ 0 $ gesetzt. Für alle anderen
+Startknoten $ v_i $ ergibt sich $ D $ als $ s_i \oplus s_s $.
+
+Erfolgt im Beispiel der Transfer von $ v_1 $ nach $ v_5 $ so gilt $$ G_5
+= f(G_1, d_5) \oplus D = s_1 \oplus (s_1 \oplus s_5) \oplus 0 = s_5 $$
+
+Für den Transfer von $ v_3 $ nach $ v_5 $ gilt $$ G_5 = f(G_3, d_5) \oplus
+D = s_3 \oplus (s_1 \oplus s_5) \oplus (s_3 \oplus s_1) = s_5 $$
+
+% TODO(hermannloose): "Algorithmus" genau beschreiben?
+Die Autoren geben einen einfachen Algorithmus an, um anhand eines vorliegenden
+CFGs das genannte Vorgehen zur Compilezeit zu realisieren.
+
+Es folgen Betrachtungen der Autoren zur Erkennbarkeit von ungültigen
+Kontrollflusstransfers. Zusammengefasst sagen diese aus, dass unerlaubte
+Verzweigungen zu einem Knoten erkannt werden, ungeachtet dessen welche
+Instruktion in diesem Knoten getroffen wird. Ebenso erfasst das Verfahren das
+Entfernen von unbedingten Verzweigungen am Ende eines Knotens, da dieser mit
+seinem Nachfolger im Code verschmilzt und die Signaturfunktion des
+Nachfolgerknotens eine ungültige Laufzeitsignatur generiert.
+
+Als weiteres Korollar wird angeführt, dass das Einfügen einer
+Verzweigungsinstruktion in einen Knoten erkannt wird, solange diese Verzweigung
+auf Knotenebene keine erlaubte ist. An dieser Stelle gehen die Autoren nicht
+weiter auf den Fall ein, dass eine Verzweigung eingefügt wird, welche laut CFG
+gültig ist—diese Gültigkeit bezieht sich jedoch implizit nur auf die
+Instruktion am Ende des Basic Blocks. In dieser Situation würden Instruktionen
+im Knoten welche nach der eingefügten Verzweigung folgen übersprungen, ohne
+dass fehlerhafter Kontrollfluss feststellbar wäre.
+
+Da bei den im folgenden Abschnitt angegebenen Messungen trotz des Einsatzes von
+CFCSS ein geringer Prozentsatz von unentdeckt verfälschten Programmergebnissen
+sichtbar wird, scheint das genannte Problem tatsächlich eine Fehlerquelle
+darzustellen.
+
+% Grundsätzlich fertig.
+\subsection{Messungen}
+
+In \cite{oh-2002-control} finden sich zu CFCSS nur Simulationsergebnisse, wobei
+dieses Paper in \cite{argos-2002-lessons} zitiert wird, also zu einem
+Zeitpunkt, als bereits Messwerte vom Einsatz auf dem Satelliten vorlagen.
+
+Die Autoren wählten sieben Benchmarks für ihre Experimente aus:
+
+\begin{itemize}
+  \item LZW-Kompression
+  \item FFT
+  \item Matrixmultiplikation
+  \item Quicksort
+  \item Insertsort
+  \item Türme von Hanoi
+  \item Shuffle
+\end{itemize}
+
+Die zugehörigen Quelltexte wurden zunächst ohne CFCSS für die MIPS-Architektur
+compiliert. Daraufhin wurde einer der im Folgenden beschriebenen Fehler
+zufällig in den entstandenen Assembler-Code eingefügt:
+
+\begin{itemize}
+  \item eine Verzweigungsinstruktion wurde durch ein NOP ersetzt,
+        d.h. zwei im Quelltext aufeinander folgende Knoten des Kontrollflussgraphen
+        verschmelzen zu einem einzelnen
+  % FIXME(hermannloose): Holprig.
+  \item eine unbedingte Verzweigungsinstruktion wurde zufällig im Programm eingefügt
+  \item der Immediate-Operand einer Verzweigungsinstruktion wurde verändert
+\end{itemize}
+
+% FIXME(hermannloose): Holprig.
+Der fertig assemblierte Binärcode wurde schließlich auf einer SGI Indigo mit
+R4400 MIPS-Prozessor ausgeführt, die in \cite{oh-2002-control} beschriebenen
+Ergebnisse beziehen sich auf jeweils 500 Iterationen der Benchmarks. Für die
+Auswertung wurden die auftretenden Fehler ob ihrer Natur und Erkennbarkeit
+unterteilt, so z.B. Endlosschleifen, Fehler die keine Auswirkungen auf das
+Ergebnis einer Berechnung hatte, Fehler, die vom Betriebssystem in Form von
+Abstürzen—z.B. Speicherzugriffsverletzungen und fehlschlagende
+Assertions—erkannt wurden etc.; hierbei lag der Fokus auf Fehlern, die
+unentdeckt Programmergebnisse verfälschten, was im Durchschnitt bei 33,7\% der
+eingefügten Fehler der Fall war.
+
+Im zweiten Durchgang wurden die Benchmarks zusätzlich zu den eingefügten
+Fehlern auf Assemblerebene mit CFCSS ausgestattet. In der Folge erzeugten nur
+noch 3,1\% dieser Fehler unentdeckt verfälschte Programmergebnisse.
+
+Die Autoren führen weiterhin Daten zum Overhead bei Größe und Ausführungszeit
+an, im Kontext der Gesamtzahl von Instruktionen jedes Benchmarks, Anzahl der
+eingefügten Instruktionen des Checking-Codes sowie der durchschnittlichen Länge
+der Basic Blocks. Für die Programmgröße beträgt der Overhead durchschnittlich
+45,2\%, für die Ausführungszeit 43,1\%.
+
+Es wird hierbei kurz bemerkt, dass rechenintensive Anwendungen ohne häufige
+Verzweigungen (im Beispiel FFT) grundsätzlich längere Basic Blocks haben und
+Overhead daher besonders bei Such- und Sortieralgorithmen mit sehr kurzen Basic
+Blocks und ständigen Verzweigungen zum Tragen kommt.
+
+% TODO(hermannloose):
+% evtl. Zahlen aus "Lessons Learned"? Falls sich dort was spezifisches zu CFCSS
+% finden lässt, kann sein, das ist nicht weiter von EDDI (dem anderen
+% Verfahren) getrennt
+% -> dort findet sich nicht viel zum Verhältnis, aber geringe Zahlen zu von
+%  CFCSS erkannten Fehlerzuständen
+
+% Grundsätzlich fertig.
+\subsection{Optimierung}
+
+% FIXME(hermannloose): Evtl kann der Absatz auch einfach raus. Ist sowieso mehr
+% oder weniger abgepinselt.
+Je nach Architektur benötigt die Berechnung einer neuen Laufzeitsignatur und
+der nachfolgende Vergleich mit der erwarteten Signatur etwa zwei bis vier
+Instruktionen. Bei einer durchschnittlichen Länge eines Basic Blocks von z.B.
+sieben bis acht Instruktionen beträgt der Overhead für die Programmgröße
+zwischen 25\% und 43\%. % FIXME(hermannloose): Ich komme hier auf 20% bis 36%??
+
+Falls Fehler nicht sofort behandelt werden müssen, kann an dieser Stelle auf
+den Vergleich der Signaturen und die folgende Verzweigung verzichtet werden.
+Solange die Laufzeitsignatur korrekt aktualisiert wird, lässt sich zu jedem
+späteren Zeitpunkt feststellen, dass im Kontrollfluss Fehler vorgelegen haben.
+Der Overhead des Verfahrens lässt sich somit auf Kosten späterer
+Fehlererkennung reduzieren.
+
+Als ein mögliches Vorgehen in der Praxis schlagen die Autoren im Beispiel vor,
+statt in jeder Iteration einer Schleife nur am Ende dieser die Signaturen zu
+vergleichen, oder für sich auf höherer Ebene verzweigenden Code den
+Signaturvergleich auf den Zeitpunkt zu verschieben, an dem sich mehrere
+Verarbeitungszweige wieder vereinen. Die quantitativen Betrachtungen hierzu
+bleiben theoretischer Natur.
+
+\pagebreak
+\bibliographystyle{unsrt}
+\bibliography{paper}
+
+\end{document}
