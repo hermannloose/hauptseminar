@@ -31,6 +31,7 @@ beiden Aspekte widmen und einander dabei in der Vorgehensweise zum Teil sehr
 
 \section{Control-Flow Integrity}
 
+% FIXME(hermannloose): Zitate für die Angriffe.
 Das in \cite{abadi-2005-control-msr} vorgestellte Verfahren \emph{Control-Flow
 Integrity} (CFI) zielt darauf ab, Angriffe zu verhindern, die auf dem Verlassen
 des erlaubten Kontrollflusses in einem Programm aufbauen. Beispielhaft werden
@@ -104,9 +105,9 @@ statische Analyse von Binärdateien gewonnen wurden, ebenfalls mittels Vulcan.
 \subsection{Instrumentierung}
 
 % TODO(hermannloose): Björns Kommentar.
-Liegt ein solcher CFG vor, muss demnach zur Laufzeit vor Kontrollflusstransfers
-mit dynamisch bestimmtem Ziel sichergestellt werden, dass vom aktuellen Knoten
-zum jeweiligen Zielknoten eine Kante im CFG existiert.
+Liegt ein solcher CFG vor, muss zur Laufzeit vor Kontrollflusstransfers mit
+dynamisch bestimmtem Ziel sichergestellt werden, dass vom aktuellen Knoten zum
+jeweiligen Zielknoten eine Kante im CFG existiert.
 
 Dazu wird jeder Äquivalenzklasse von Zielknoten im CFG eine ID zugewiesen und
 direkt vor jedem Zielknoten im Codesegment eingefügt. Vor dem Transfer kann
@@ -125,7 +126,7 @@ An dieser Stelle identifizieren die Autoren als Problem, dass mit dieser
 Vorgehensweise nicht sichergestellt werden kann, dass Funktionen ausschließlich
 zu ihrem jüngsten Aufrufort zurückkehren können. Es erfolgt der Verweis auf die
 spätere Beschreibung\footnote{siehe \ref{return-solution}} eines auf CFI
-aufbauenden Verfahrens, welches diese Beschränkung ermöglicht.
+aufbauenden Verfahrens, welches diese Einschränkung realisiert.
 
 Die Autoren evaluieren in der Folge zwei konkrete Möglichkeiten der
 Instrumentierung von Funktionsaufrufen.
@@ -277,8 +278,8 @@ in die Mitte von Funktionen bereits erfolgreich verhindern können.
 
 \subsection{Praktische Implementierung}
 
-Die Autoren teilen CFI als Verfahren noch in mehrere Phasen auf, welche sich
-nach ihrer Aussage größtenteils unabhängig voneinander betrachten lassen.
+Die Autoren teilen CFI als Verfahren in mehrere Phasen auf, welche sich nach
+ihrer Aussage größtenteils unabhängig voneinander betrachten lassen.
 
 Die erste Phase betrifft die Generierung der später verwendeten CFGs. Neben der
 von den Autoren selbst verwendeten Analyse von Binärdateien werden nochmals
@@ -365,7 +366,7 @@ diese Exploits wurden durch die CFI-Instrumentierung erfolgreich verhindert.
 
 \subsection{CFI als Grundlage für andere Verfahren}
 
-% TODO(hermannloose): Zitate für IRMs und SMAC?
+% FIXME(hermannloose): Zitate für IRMs und SMAC?
 Aufgrund seiner Garantien für den Kontrollfluss von Programmen kann CFI zudem
 als Grundlage für den Einsatz bzw. die Optimierung und Vereinfachung einer
 Reihe anderer, ebenfalls softwarebasierter Mechanismen dienen. Die in
@@ -498,6 +499,7 @@ Optimierung für Returninstruktionen. Für die Benchmarks \texttt{crafty},
 feststellbar, während er für \texttt{mcf}, \texttt{parser} und \texttt{vpr} von
 zuvor eher geringen Werten zum Teil um das 50-fache ansteigt.
 
+% FIXME(hermannloose): Genaue Range angeben.
 Die Autoren bezeichnen diese Werte bei einem Durchschnitt von 21\% trotzdem als
 „bescheiden“ und nennen speziell 5\% für \texttt{gzip} und 11\% für
 \texttt{gcc}.
