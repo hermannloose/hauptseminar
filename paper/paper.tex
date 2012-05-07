@@ -25,9 +25,10 @@ Sicherheit der Rechnersysteme auf denen diese Programme laufen als auch für die
 Verlässlichkeit der von ihnen ausgeführten Berechnungen dar.
 
 % Blah blah?
-Es werden in der Folge zwei Verfahren betrachtet, die sich jeweils einem dieser
-beiden Aspekte widmen und einander dabei in der Vorgehensweise zum Teil sehr
-ähnlich sind.
+Es werden in der Folge die Verfahren \emph{Control-Flow Integrity} und
+\emph{Control-Flow Checking by Software Signatures} betrachtet, die sich
+jeweils einem dieser beiden Aspekte widmen und einander dabei in der
+Vorgehensweise zum Teil sehr ähnlich sind.
 
 \section{Control-Flow Integrity}
 
@@ -35,9 +36,10 @@ beiden Aspekte widmen und einander dabei in der Vorgehensweise zum Teil sehr
 Das in \cite{abadi-2005-control-msr} vorgestellte Verfahren \emph{Control-Flow
 Integrity} (CFI) zielt darauf ab, Angriffe zu verhindern, die auf dem Verlassen
 des erlaubten Kontrollflusses in einem Programm aufbauen. Beispielhaft werden
-stackbasierte Pufferüberläufe und darauf fußende Techniken, heapbasierte
-\emph{jump-to-}\texttt{libc}-Angriffe sowie \emph{pointer subterfuge}-Angriffe
-genannt.
+stackbasierte Pufferüberläufe und darauf fußende
+Techniken~\cite{one-1996-smashing}, heapbasierte
+\emph{jump-to-}\texttt{libc}-Angriffe~\cite{anonymous-2001-free} sowie
+\emph{pointer subterfuge}-Angriffe~\cite{pincus-2004-beyond} genannt.
 
 Die Autoren argumentieren, dass viele der bisher gegen solche Angriffe
 eingesetzten Mechanismen in ihrer Wirksamkeit beschränkt seien, da ihnen ein
@@ -500,9 +502,9 @@ Optimierung für Returninstruktionen. Für die Benchmarks \texttt{crafty},
 feststellbar, während er für \texttt{mcf}, \texttt{parser} und \texttt{vpr} von
 zuvor eher geringen Werten zum Teil um das 50-fache ansteigt.
 
-Die Autoren bezeichnen diese Werte—zwischen 4\% und 56\%—bei einem Durchschnitt
-von 21\% trotzdem als „bescheiden“ und nennen speziell 5\% für \texttt{gzip}
-und 11\% für \texttt{gcc}.
+Die Autoren bezeichnen diese Werte, welche zwischen 4\% und 56\% liegen, bei
+einem Durchschnitt von 21\% trotzdem als „bescheiden“ und nennen speziell 5\%
+für \texttt{gzip} und 11\% für \texttt{gcc}.
 
 % Grundsätzlich fertig.
 \subsection{Fazit}
