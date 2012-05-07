@@ -32,7 +32,6 @@ Vorgehensweise zum Teil sehr ähnlich sind.
 
 \section{Control-Flow Integrity}
 
-% FIXME(hermannloose): Zitate für die Angriffe.
 Das in \cite{abadi-2005-control-msr} vorgestellte Verfahren \emph{Control-Flow
 Integrity} (CFI) zielt darauf ab, Angriffe zu verhindern, die auf dem Verlassen
 des erlaubten Kontrollflusses in einem Programm aufbauen. Beispielhaft werden
@@ -369,15 +368,16 @@ diese Exploits wurden durch die CFI-Instrumentierung erfolgreich verhindert.
 
 \subsection{CFI als Grundlage für andere Verfahren}
 
-% FIXME(hermannloose): Zitate für IRMs und SMAC?
+% SFI und SMAC ohne Zitate, weil die ACM-Deppen gerade meinen, ich wäre ein
+% Bot und mir den Download verweigern. –hermannloose, 07.05.12
 Aufgrund seiner Garantien für den Kontrollfluss von Programmen kann CFI zudem
 als Grundlage für den Einsatz bzw. die Optimierung und Vereinfachung einer
 Reihe anderer, ebenfalls softwarebasierter Mechanismen dienen. Die in
 \cite{abadi-2009-control-tissec} beleuchteten sind \emph{Inlined Reference
-Monitors} (IRMs), \emph{Software Fault Isolation} (SFI) und \emph{Software
-Memory Access-Control} (SMAC), sowie ein auf dem letzteren Verfahren
-aufbauender \emph{Shadow Call Stack}, welcher korrekte Funktionsrückkehr an den
-jüngsten Aufrufort sicherstellen kann.
+Monitors}~(IRMs)~\cite{erlingsson-2003-inlined}, \emph{Software Fault
+Isolation} (SFI) und \emph{Software Memory Access-Control} (SMAC), sowie ein
+auf dem letzteren Verfahren aufbauender \emph{Shadow Call Stack}, welcher
+korrekte Funktionsrückkehr an den jüngsten Aufrufort sicherstellen kann.
 
 \subsubsection{Inlined Reference Monitors}
 
