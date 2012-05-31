@@ -1,4 +1,4 @@
-\documentclass[11pt]{article}
+\documentclass[11pt,a4paper]{article}
 \usepackage{fontspec}
 \usepackage{ngerman}
 \usepackage[top=3cm,left=3.5cm,right=3.5cm,bottom=3cm]{geometry}
@@ -335,7 +335,7 @@ Programm belief sich auf 8\%. Die Laufzeit der instrumentierten Programme stieg
 um durchschnittlich 16\%, die zugehörige Grafik gibt Werte zwischen etwa 1\%
 und 46\% an. Die Autoren bewerten diesen Overhead als akzeptabel und
 verweisen—ohne weitere Ausführungen—auf Möglichkeiten der Optimierung für die
-x86-Implementierung von CFI.
+x86-Imple\-men\-tie\-rung von CFI.
 
 % Grundsätzlich fertig.
 \subsubsection{Sicherheit}
@@ -355,8 +355,8 @@ dem erlaubten Kontrollfluss aufbauen.
 Als detailliertes Beispiel wird eine C-Funktion zur Medianberechnung
 beschrieben, bei der CFI—zumindest in der Theorie—das Überschreiben eines
 Funktionspointers durch einen Bufferoverflow und die nachfolgende Ausnutzung
-dieser Schwachstelle verhindert hätte. Es wird erneut darauf hingewiesen, dass
-selbst ein sehr grober CFG hier bereits Schutz böte.
+dieser\linebreak Schwachstelle verhindert hätte. Es wird erneut darauf
+hingewiesen, dass selbst ein sehr grober CFG hier bereits Schutz böte.
 
 Als „abschließende Gruppe von Experimenten“—hier ist weiterhin unklar, ob und
 falls ja, welche weiteren, praktischen Experimente erfolgt sind—portierten die
@@ -656,9 +656,9 @@ Die Autoren wählten sieben Benchmarks für ihre Experimente aus:
   \item Shuffle
 \end{itemize}
 
-Die zugehörigen Quelltexte wurden zunächst ohne CFCSS für die MIPS-Architektur
-compiliert. Daraufhin wurde einer der im Folgenden beschriebenen Fehler
-zufällig in den entstandenen Assembler-Code eingefügt:
+Die zugehörigen Quelltexte wurden zunächst ohne CFCSS für die
+MIPS-Archi\-tektur compiliert. Daraufhin wurde einer der im Folgenden
+beschriebenen Fehler zufällig in den entstandenen Assembler-Code eingefügt:
 
 \begin{itemize}
   \item eine Verzweigungsinstruktion wurde durch ein NOP ersetzt,
